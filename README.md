@@ -11,3 +11,17 @@
 
 ```bash
 git clone https://github.com/AlekseyWm/Dip-project.git
+```
+
+2. Команды для установки всех нужных библиотек:
+
+```bash
+npm install --legacy-peer-deps
+npm install react react-dom react-scripts
+npm install @monaco-editor/react
+npm install react-icons
+npm install xterm
+npm install antd
+npm install web-vitals
+```
+
