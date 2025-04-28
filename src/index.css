@@ -1,0 +1,39 @@
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('./data/fronts/proximanova_regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('./data/fronts/proximanova_bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('./data/fronts/proximanova_light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('./data/fronts/proximanova_black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  font-family: 'Proxima Nova', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
