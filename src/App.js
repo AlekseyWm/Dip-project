@@ -27,12 +27,12 @@ function App() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Обновление списков после загрузки
+  // --- Обновление списка после загрузки
   const handleUploadSuccess = () => {
     setRefreshUntranslatedTrigger(prev => prev + 1);
   };
 
-  // Выбор файла справа
+  // --- Выбор файла справа
   const handleSelectFileRight = (fname) => {
     setSelectedFileRight(fname);
     setOverrideCode('');
@@ -40,6 +40,7 @@ function App() {
     logToTerminal(`Выбран справа: ${fname}`);
   };
 
+  // --- Процесс интерпретации
   const handleTranslate = () => {
     if (!selectedFileLeft) {
       logToTerminal('Не выбран файл слева для интерпретации.');
@@ -49,7 +50,7 @@ function App() {
     setIsTranslating(true);
     setProgress(0);
 
-    const interval = setInterval(() => {
+    const progressInterval = setInterval(() => {
       setProgress(prev => (prev < 90 ? prev + 5 : prev));
     }, 300);
 
@@ -86,22 +87,20 @@ function App() {
         logToTerminal(`Ошибка при интерпретации: ${err.message}`);
       })
       .finally(() => {
-        clearInterval(interval);
+        clearInterval(progressInterval);
         setProgress(100);
-        setTimeout(() => {
-          setIsTranslating(false);
-        }, 500);
+        setTimeout(() => setIsTranslating(false), 500);
       });
   };
 
   return (
     <div className="App">
-      {/* Модалка загрузки */}
+      {/* Модальное окно прогресса */}
       {isTranslating && (
         <div style={{
           position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -109,46 +108,69 @@ function App() {
         }}>
           <div style={{
             backgroundColor: '#f9f9f9',
-            padding: '30px 40px',
-            borderRadius: '10px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
-            minWidth: '300px',
+            padding: '25px 30px',
+            borderRadius: '8px',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+            minWidth: '350px',
             textAlign: 'center'
           }}>
             <div style={{
-              backgroundColor: '#ddd',
-              borderRadius: '10px',
-              overflow: 'hidden',
-              height: '16px',
               marginBottom: '20px',
-            }}>
-             <div style={{
-                width: `${progress}%`,
-                height: '100%',
-                background: `repeating-linear-gradient(
-                  45deg,
-                rgb(168, 213, 194),
-                rgb(168, 213, 199) 10px,
-                rgb(127, 199, 192) 10px,
-                rgb(135, 204, 202) 20px
-                )`,
-                transition: 'width 0.3s ease'
-              }} />
-            </div>
-            <div style={{
               fontFamily: 'Proxima Nova, sans-serif',
-              fontSize: '16px',
-              color: '#444'
+              fontSize: '18px',
+              fontWeight: 'Semibold',
+              color: '#rgb(36, 36, 41),'
             }}>
               Идёт интерпретация...
             </div>
+
+            {/* Прогрессбар */}
+            <div style={{
+              backgroundColor: '#ddd',
+              borderRadius: '5px',
+              overflow: 'hidden',
+              height: '18px',
+              position: 'relative'
+            }}>
+              <div style={{
+                width: `${progress}%`,
+                height: '100%',
+                background: `
+                  linear-gradient(
+                    270deg,
+                    rgb(168, 192, 213),
+                    rgb(108, 137, 154),
+                    rgb(114, 146, 191),
+                    rgb(124, 158, 192),
+                    rgb(168, 192, 213)
+                  )
+                `,
+                backgroundSize: '400% 400%',
+                animation: 'waveAnimation 8s ease infinite',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+
+            {/* Ключевые кадры анимации плавной волны */}
+            <style>
+              {`
+                @keyframes waveAnimation {
+                  0% { background-position: 0% 50%; }
+                  50% { background-position: 100% 50%; }
+                  100% { background-position: 0% 50%; }
+                }
+              `}
+            </style>
+
           </div>
         </div>
       )}
 
+
       {/* Основной интерфейс */}
       <Header />
       <div style={{ padding: '20px' }}>
+        {/* Верхняя панель */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -164,6 +186,7 @@ function App() {
           }}>
             Интерпретатор НМЗ XIS
           </span>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <FileUploader
               logToTerminal={logToTerminal}
@@ -210,7 +233,7 @@ function App() {
           </div>
         </div>
 
-        {/* Окна редакторов */}
+        {/* Два редактора */}
         <div style={{ marginTop: '10px' }}>
           <Split
             className="split"
