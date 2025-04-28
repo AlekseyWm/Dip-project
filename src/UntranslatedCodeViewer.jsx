@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave } from 'react-icons/fa';
+import { FaUndo, FaSave, FaExpandArrowsAlt } from 'react-icons/fa'; // Добавили иконку полного экрана
 
-function UntranslatedCodeViewer({
-  fileName,
-  logToTerminal,
-  onSaveSuccess,
-}) {
+function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
   const [code, setCode] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
-  const [isFullscreen, setIsFullscreen] = useState(false); 
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (!fileName) {
@@ -78,7 +74,7 @@ function UntranslatedCodeViewer({
 
   return (
     <div
-      onDoubleClick={() => setIsFullscreen(prev => !prev)} 
+      onDoubleClick={() => setIsFullscreen(prev => !prev)}
       style={{
         position: isFullscreen ? 'fixed' : 'relative',
         top: isFullscreen ? 0 : 'auto',
@@ -90,6 +86,9 @@ function UntranslatedCodeViewer({
         border: '1px solid #ccc',
         borderRadius: '8px',
         overflow: 'hidden',
+        paddingRight: isFullscreen ? '20px' : '0px',
+        paddingLeft: isFullscreen ? '20px' : '0px',
+        boxSizing: 'border-box',
       }}
     >
       <div style={{
@@ -147,11 +146,14 @@ function UntranslatedCodeViewer({
           <button onClick={handleSaveEditedScript} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
             <FaSave />
           </button>
+          <button onClick={() => setIsFullscreen(prev => !prev)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+            <FaExpandArrowsAlt />
+          </button>
         </div>
       </div>
 
       <Editor
-        height={isFullscreen ? 'calc(100vh - 40px)' : '400px'} 
+        height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
         language="pascal"
         theme="vs-dark"
         value={code}

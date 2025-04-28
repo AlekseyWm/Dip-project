@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave } from 'react-icons/fa';
+import { FaUndo, FaSave, FaExpandArrowsAlt } from 'react-icons/fa'; // <-- Добавили иконку Fullscreen
 
 function TranslatedCodeViewer({
   fileName,
@@ -13,7 +13,7 @@ function TranslatedCodeViewer({
   const [editedFileName, setEditedFileName] = useState('');
   const [code, setCode] = useState('');
   const [currentFileName, setCurrentFileName] = useState('');
-  const [isFullscreen, setIsFullscreen] = useState(false); // 🆕 Флаг полноэкранного режима
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (overrideCode) {
@@ -82,19 +82,22 @@ function TranslatedCodeViewer({
 
   return (
     <div
-      onDoubleClick={() => setIsFullscreen(prev => !prev)} // 🆕 двойной клик
-      style={{
-        position: isFullscreen ? 'fixed' : 'relative',
-        top: isFullscreen ? 0 : 'auto',
-        left: isFullscreen ? 0 : 'auto',
-        width: isFullscreen ? '100vw' : '100%',
-        height: isFullscreen ? '100vh' : 'auto',
-        zIndex: isFullscreen ? 9999 : 'auto',
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}
+    onDoubleClick={() => setIsFullscreen(prev => !prev)}
+    style={{
+      position: isFullscreen ? 'fixed' : 'relative',
+      top: isFullscreen ? 0 : 'auto',
+      left: isFullscreen ? 0 : 'auto',
+      width: isFullscreen ? '100vw' : '100%',
+      height: isFullscreen ? '100vh' : 'auto',
+      zIndex: isFullscreen ? 9999 : 'auto',
+      backgroundColor: '#1e1e1e',
+      border: '1px solid #ccc',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      paddingRight: isFullscreen ? '20px' : '0px',
+      paddingLeft: isFullscreen ? '20px' : '0px',
+      boxSizing: 'border-box',
+    }}
     >
       <div style={{
         backgroundColor: '#1e1e1e',
@@ -156,10 +159,13 @@ function TranslatedCodeViewer({
           <button onClick={handleSaveEdited} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
             <FaSave />
           </button>
+          <button onClick={() => setIsFullscreen(prev => !prev)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+            <FaExpandArrowsAlt />
+          </button>
         </div>
       </div>
       <Editor
-        height={isFullscreen ? 'calc(100vh - 40px)' : '400px'} // 🆙 адаптация по флагу
+        height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
         language="python"
         theme="vs-dark"
         value={code}
