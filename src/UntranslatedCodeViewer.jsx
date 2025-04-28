@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave, FaExpandArrowsAlt } from 'react-icons/fa'; // Добавили иконку полного экрана
+import { FaUndo, FaSave, FaExpandArrowsAlt, FaSyncAlt } from 'react-icons/fa';
+import { Drawer, Button } from 'antd';
+import { FaFolderOpen } from 'react-icons/fa';
+import FileList from './FileList';
 
-function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
+function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSelectFile }) {
   const [code, setCode] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [refreshFileListTrigger, setRefreshFileListTrigger] = useState(0);
+
 
   useEffect(() => {
     if (!fileName) {
@@ -72,6 +79,21 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
       });
   };
 
+  const openDrawer = () => {
+    setRefreshFileListTrigger(prev => prev + 1); 
+    setDrawerVisible(true);
+  };
+  
+
+  const closeDrawer = () => {
+    setDrawerVisible(false);
+  };
+
+  const handleSelectFile = (fname) => {
+    onSelectFile && onSelectFile(fname);
+    closeDrawer();
+  };
+
   return (
     <div
       onDoubleClick={() => setIsFullscreen(prev => !prev)}
@@ -86,8 +108,8 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
         border: '1px solid #ccc',
         borderRadius: '8px',
         overflow: 'hidden',
-        paddingRight: isFullscreen ? '20px' : '0px',
-        paddingLeft: isFullscreen ? '20px' : '0px',
+        paddingRight: isFullscreen ? '10px' : '0px',
+        paddingLeft: isFullscreen ? '10px' : '0px',
         boxSizing: 'border-box',
       }}
     >
@@ -140,8 +162,8 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
         )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
-            <FaUndo />
+          <button onClick={openDrawer} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>
+            <FaFolderOpen />
           </button>
           <button onClick={handleSaveEditedScript} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
             <FaSave />
@@ -160,6 +182,21 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess }) {
         onChange={(value) => setCode(value || '')}
         options={{ fontSize: 14 }}
       />
+
+      <Drawer
+        title="Выберите файл для загрузки"
+        placement="left"
+        closable={true}
+        onClose={closeDrawer}
+        open={drawerVisible}
+        width={400}
+      >
+        <FileList
+          bucketName="scripts-untranslated"
+          refreshTrigger={refreshFileListTrigger}
+          onSelectFile={handleSelectFile}
+        />
+      </Drawer>
     </div>
   );
 }

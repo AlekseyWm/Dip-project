@@ -169,14 +169,14 @@ function App() {
 
       {/* Основной интерфейс */}
       <Header />
-      <div style={{ padding: '20px' }}>
+      <div style={{ padding: '15px 10px' }}>
         {/* Верхняя панель */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '20px',
-          padding: '15px 20px',
+          padding: '10px',
         }}>
           <span style={{
             fontSize: '24px',
@@ -210,29 +210,6 @@ function App() {
           </div>
         </div>
 
-        {/* Списки файлов */}
-        <div style={{ display: 'flex', gap: '40px', marginTop: '20px' }}>
-          <div style={{ flex: 1 }}>
-            <h2>Список (scripts-untranslated)</h2>
-            <FileList
-              bucketName="scripts-untranslated"
-              refreshTrigger={refreshUntranslatedTrigger}
-              onSelectFile={(fname) => {
-                setSelectedFileLeft(fname);
-                logToTerminal(`Выбран слева: ${fname}`);
-              }}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2>Список (scripts-translated)</h2>
-            <FileList
-              bucketName="scripts-translated"
-              refreshTrigger={refreshTranslatedTrigger}
-              onSelectFile={handleSelectFileRight}
-            />
-          </div>
-        </div>
-
         {/* Два редактора */}
         <div style={{ marginTop: '10px' }}>
           <Split
@@ -243,20 +220,30 @@ function App() {
             style={{ display: 'flex' }}
           >
             <div style={{ height: '100%' }}>
-              <UntranslatedCodeViewer
-                fileName={selectedFileLeft}
-                logToTerminal={logToTerminal}
-                onSaveSuccess={() => setRefreshUntranslatedTrigger(prev => prev + 1)}
-              />
+            <UntranslatedCodeViewer
+              fileName={selectedFileLeft}
+              logToTerminal={logToTerminal}
+              onSaveSuccess={() => setRefreshUntranslatedTrigger(prev => prev + 1)}
+              onSelectFile={(fname) => {
+                setSelectedFileLeft(fname);
+                logToTerminal(`Выбран новый файл слева: ${fname}`);
+              }}
+            />
             </div>
             <div style={{ height: '100%' }}>
-              <TranslatedCodeViewer
-                fileName={selectedFileRight}
-                overrideCode={overrideCode}
-                overrideFileName={overrideFileName}
-                logToTerminal={logToTerminal}
-                onSaveSuccess={() => setRefreshTranslatedTrigger(prev => prev + 1)}
-              />
+            <TranslatedCodeViewer
+              fileName={selectedFileRight}
+              overrideCode={overrideCode}
+              overrideFileName={overrideFileName}
+              logToTerminal={logToTerminal}
+              onSaveSuccess={() => setRefreshTranslatedTrigger(prev => prev + 1)}
+              onSelectFile={(fname) => {
+                setSelectedFileRight(fname);
+                setOverrideCode('');
+                setOverrideFileName('');
+                logToTerminal(`Выбран новый файл справа: ${fname}`);
+              }}
+            />
             </div>
           </Split>
         </div>

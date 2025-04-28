@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave, FaExpandArrowsAlt } from 'react-icons/fa'; // <-- Добавили иконку Fullscreen
+import { FaUndo, FaSave, FaExpandArrowsAlt, FaFolderOpen } from 'react-icons/fa';
+import { Drawer, Button } from 'antd';
+import FileList from './FileList';
 
 function TranslatedCodeViewer({
   fileName,
   overrideCode,
   overrideFileName,
   logToTerminal,
-  onSaveSuccess
+  onSaveSuccess,
+  onSelectFile
 }) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedFileName, setEditedFileName] = useState('');
   const [code, setCode] = useState('');
   const [currentFileName, setCurrentFileName] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [refreshFileListTrigger, setRefreshFileListTrigger] = useState(0);
 
   useEffect(() => {
     if (overrideCode) {
@@ -80,24 +86,38 @@ function TranslatedCodeViewer({
       });
   };
 
+  const openDrawer = () => {
+    setRefreshFileListTrigger(prev => prev + 1);
+    setDrawerVisible(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerVisible(false);
+  };
+
+  const handleSelectFile = (fname) => {
+    onSelectFile && onSelectFile(fname);
+    closeDrawer();
+  };
+
   return (
     <div
-    onDoubleClick={() => setIsFullscreen(prev => !prev)}
-    style={{
-      position: isFullscreen ? 'fixed' : 'relative',
-      top: isFullscreen ? 0 : 'auto',
-      left: isFullscreen ? 0 : 'auto',
-      width: isFullscreen ? '100vw' : '100%',
-      height: isFullscreen ? '100vh' : 'auto',
-      zIndex: isFullscreen ? 9999 : 'auto',
-      backgroundColor: '#1e1e1e',
-      border: '1px solid #ccc',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      paddingRight: isFullscreen ? '20px' : '0px',
-      paddingLeft: isFullscreen ? '20px' : '0px',
-      boxSizing: 'border-box',
-    }}
+      onDoubleClick={() => setIsFullscreen(prev => !prev)}
+      style={{
+        position: isFullscreen ? 'fixed' : 'relative',
+        top: isFullscreen ? 0 : 'auto',
+        left: isFullscreen ? 0 : 'auto',
+        width: isFullscreen ? '100vw' : '100%',
+        height: isFullscreen ? '100vh' : 'auto',
+        zIndex: isFullscreen ? 9999 : 'auto',
+        backgroundColor: '#1e1e1e',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        paddingRight: isFullscreen ? '10px' : '0px',
+        paddingLeft: isFullscreen ? '10px' : '0px',
+        boxSizing: 'border-box',
+      }}
     >
       <div style={{
         backgroundColor: '#1e1e1e',
@@ -152,9 +172,10 @@ function TranslatedCodeViewer({
             {editedFileName || 'Переведённый скрипт.py'}
           </span>
         )}
+
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
-            <FaUndo />
+          <button onClick={openDrawer} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>
+            <FaFolderOpen />
           </button>
           <button onClick={handleSaveEdited} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
             <FaSave />
@@ -164,6 +185,7 @@ function TranslatedCodeViewer({
           </button>
         </div>
       </div>
+
       <Editor
         height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
         language="python"
@@ -172,6 +194,21 @@ function TranslatedCodeViewer({
         onChange={(value) => setCode(value || '')}
         options={{ fontSize: 14 }}
       />
+
+      <Drawer
+        title="Выберите файл для загрузки (.py)"
+        placement="right"
+        closable={true}
+        onClose={closeDrawer}
+        open={drawerVisible}
+        width={400}
+      >
+        <FileList
+          bucketName="scripts-translated"
+          refreshTrigger={refreshFileListTrigger}
+          onSelectFile={handleSelectFile}
+        />
+      </Drawer>
     </div>
   );
 }
