@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useRef, useState, useEffect } from 'react';
 import TerminalWindow from './TerminalWindow';
 import UntranslatedCodeViewer from './UntranslatedCodeViewer';
@@ -134,16 +133,7 @@ function App() {
               <div style={{
                 width: `${progress}%`,
                 height: '100%',
-                background: `
-                  linear-gradient(
-                    270deg,
-                    rgb(168, 192, 213),
-                    rgb(108, 137, 154),
-                    rgb(114, 146, 191),
-                    rgb(124, 158, 192),
-                    rgb(168, 192, 213)
-                  )
-                `,
+                background: `linear-gradient(270deg, rgb(168, 192, 213), rgb(108, 137, 154), rgb(114, 146, 191), rgb(124, 158, 192), rgb(168, 192, 213))`,
                 backgroundSize: '400% 400%',
                 animation: 'waveAnimation 8s ease infinite',
                 transition: 'width 0.3s ease'
@@ -164,7 +154,6 @@ function App() {
           </div>
         </div>
       )}
-
 
       {/* Основной интерфейс */}
       <Header />
@@ -187,13 +176,13 @@ function App() {
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          < button
-            onClick={handleTranslate}
-            disabled={isTranslating}
-            className="btn-translate"
-          >
-            {isTranslating ? 'Интерпретируем...' : 'Интерпретировать'}
-          </button>
+            <button
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              className="btn-translate"
+            >
+              {isTranslating ? 'Интерпретируем...' : 'Интерпретировать'}
+            </button>
           </div>
         </div>
 
@@ -207,40 +196,40 @@ function App() {
             style={{ display: 'flex' }}
           >
             <div style={{ height: '100%' }}>
-            <UntranslatedCodeViewer
-              fileName={selectedFileLeft}
-              logToTerminal={logToTerminal}
-              onSaveSuccess={() => setRefreshUntranslatedTrigger(prev => prev + 1)}
-              onSelectFile={(fname) => {
-                setSelectedFileLeft(fname);
-                logToTerminal(`Выбран новый файл слева: ${fname}`);
-              }}
-            />
+              <UntranslatedCodeViewer
+                fileName={selectedFileLeft}
+                logToTerminal={logToTerminal}
+                onSaveSuccess={() => setRefreshUntranslatedTrigger(prev => prev + 1)}
+                onSelectFile={(fname) => {
+                  setSelectedFileLeft(fname);
+                  logToTerminal(`Выбран новый файл слева: ${fname}`);
+                }}
+              />
             </div>
             <div style={{ height: '100%' }}>
-            <TranslatedCodeViewer
-              fileName={selectedFileRight}
-              overrideCode={overrideCode}
-              overrideFileName={overrideFileName}
-              logToTerminal={logToTerminal}
-              onSaveSuccess={() => setRefreshTranslatedTrigger(prev => prev + 1)}
-              onSelectFile={(fname) => {
-                setSelectedFileRight(fname);
-                setOverrideCode('');
-                setOverrideFileName('');
-                logToTerminal(`Выбран новый файл справа: ${fname}`);
-              }}
-            />
+              <TranslatedCodeViewer
+                fileName={selectedFileRight}
+                overrideCode={overrideCode}
+                overrideFileName={overrideFileName}
+                logToTerminal={logToTerminal}
+                onSaveSuccess={() => setRefreshTranslatedTrigger(prev => prev + 1)}
+                onSelectFile={(fname) => {
+                  setSelectedFileRight(fname);
+                  setOverrideCode('');
+                  setOverrideFileName('');
+                  logToTerminal(`Выбран новый файл справа: ${fname}`);
+                }}
+              />
             </div>
           </Split>
         </div>
 
-        {/* Терминал
+        {/* Терминал */}
         <div style={{ marginTop: '10px' }}>
           <div className='terminal-container'>
             <TerminalWindow terminalRef={terminalRef} />
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

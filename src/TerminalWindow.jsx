@@ -1,4 +1,3 @@
-// src/TerminalWindow.jsx
 import React, { useEffect, useRef } from 'react';
 import { Terminal } from 'xterm';
 import 'xterm/css/xterm.css';
@@ -16,7 +15,11 @@ function TerminalWindow({ terminalRef }) {
       terminalRef.current = new Terminal({
         rows: 10,
         cols: 80,
-        cursorBlink: true
+        cursorBlink: true,
+        theme: {
+          background: '#fff', // Светлый фон для терминала
+          foreground: '#000', // Черный текст
+        }
       });
       terminalRef.current.open(containerRef.current);
 
@@ -32,8 +35,11 @@ function TerminalWindow({ terminalRef }) {
       style={{
         height: '200px',
         border: '1px solid #ccc',
-        borderRadius: '5px',
+        borderRadius: '8px',
         overflow: 'hidden',
+        backgroundColor: '#fff', // Светлый фон терминала
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Легкая тень для визуального эффекта
+        marginTop: '20px', // Отступ сверху
       }}
     />
   );
