@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave, FaExpandArrowsAlt, FaSyncAlt } from 'react-icons/fa';
-import { Drawer, Button } from 'antd';
-import { FaFolderOpen } from 'react-icons/fa';
+import { FaSave, FaExpandArrowsAlt, FaFolderOpen } from 'react-icons/fa';
+import { Drawer } from 'antd';
 import FileList from './FileList';
 
 function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSelectFile }) {
@@ -14,6 +13,10 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [refreshFileListTrigger, setRefreshFileListTrigger] = useState(0);
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!fileName) {
@@ -80,10 +83,9 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
   };
 
   const openDrawer = () => {
-    setRefreshFileListTrigger(prev => prev + 1); 
+    setRefreshFileListTrigger(prev => prev + 1);
     setDrawerVisible(true);
   };
-  
 
   const closeDrawer = () => {
     setDrawerVisible(false);
@@ -92,6 +94,48 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
   const handleSelectFile = (fname) => {
     onSelectFile && onSelectFile(fname);
     closeDrawer();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = (e) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      logToTerminal && logToTerminal('Выберите файл перед загрузкой.');
+      return;
+    }
+
+    setIsUploading(true);
+    logToTerminal && logToTerminal(`Начинается загрузка файла: ${selectedFile.name}`);
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    fetch('http://localhost:9999/api/application/upload_script', {
+      method: 'POST',
+      body: formData
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Ошибка HTTP: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        logToTerminal && logToTerminal(data.message || 'Файл успешно загружен!');
+        setSelectedFile(null);
+        setRefreshFileListTrigger(prev => prev + 1); // обновить список
+      })
+      .catch((error) => {
+        logToTerminal && logToTerminal(`Ошибка при загрузке файла: ${error.message}`);
+      })
+      .finally(() => {
+        setIsUploading(false);
+      });
   };
 
   return (
@@ -184,13 +228,55 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
       />
 
       <Drawer
-        title="Выберите файл для загрузки"
+        title="Загрузка скрипта и список файлов"
         placement="left"
         closable={true}
         onClose={closeDrawer}
         open={drawerVisible}
         width={400}
       >
+        {/* Форма для загрузки файла */}
+        <form
+          onSubmit={handleUpload}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', gap: '10px' }}
+        >
+          <label style={{
+            border: '1px solid #198754',
+            color: '#198754',
+            padding: '6px 14px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontFamily: 'Proxima Nova, sans-serif',
+          }}>
+            Выберите файл
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <span style={{ fontFamily: 'Proxima Nova, sans-serif', fontSize: '14px' }}>
+            {selectedFile ? selectedFile.name : 'Файл не выбран'}
+          </span>
+          <button
+            type="submit"
+            disabled={isUploading}
+            style={{
+              border: '1px solid #198754',
+              color: '#198754',
+              backgroundColor: 'transparent',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontFamily: 'Proxima Nova, sans-serif',
+            }}
+          >
+            {isUploading ? 'Загрузка...' : 'Загрузить'}
+          </button>
+        </form>
+
+        {/* Список файлов */}
         <FileList
           bucketName="scripts-untranslated"
           refreshTrigger={refreshFileListTrigger}

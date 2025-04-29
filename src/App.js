@@ -188,10 +188,6 @@ function App() {
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <FileUploader
-              logToTerminal={logToTerminal}
-              onUploadSuccess={handleUploadSuccess}
-            />
             <button
               onClick={handleTranslate}
               disabled={isTranslating}

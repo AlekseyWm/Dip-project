@@ -25,7 +25,6 @@ function FileList({ bucketName, refreshTrigger = 0, onSelectFile }) {
         console.error(`Ошибка при загрузке списка файлов (${bucketName}):`, error);
       });
   }, [bucketName, refreshTrigger]);  
-  // ^^^ При изменении refreshTrigger заново загружаем список
 
   return (
     <ul>
