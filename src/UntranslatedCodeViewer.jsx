@@ -140,14 +140,13 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
 
   return (
     <div
-      onDoubleClick={() => setIsFullscreen(prev => !prev)}
       style={{
-        position: isFullscreen ? 'fixed' : 'relative',
+        position: isFullscreen ? 'absolute' : 'relative',
         top: isFullscreen ? 0 : 'auto',
         left: isFullscreen ? 0 : 'auto',
         width: isFullscreen ? '100vw' : '100%',
         height: isFullscreen ? '100vh' : 'auto',
-        zIndex: isFullscreen ? 9999 : 'auto',
+        zIndex: isFullscreen ? 10 : 'auto',
         backgroundColor: '#1e1e1e',
         border: '1px solid #ccc',
         borderRadius: '8px',
@@ -158,8 +157,8 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
       }}
     >
       <div style={{
-        backgroundColor: '#1e1e1e',
-        color: '#fff',
+        backgroundColor: '#f0f0f0',
+        color: '#222',
         padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
@@ -180,8 +179,8 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
               fontSize: '14px',
               background: 'transparent',
               border: 'none',
-              borderBottom: '1px solid #fff',
-              color: '#fff',
+              borderBottom: '1px solid #222',
+              color: '#222',
               fontFamily: 'monospace',
               width: '100%',
             }}
@@ -198,7 +197,7 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
               display: 'inline-block',
               cursor: 'text',
               fontWeight: 'bold',
-              color: '#fff'
+              color: '#222'
             }}
           >
             {editedFileName}
@@ -206,13 +205,43 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
         )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={openDrawer} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>
+          <button
+            onClick={openDrawer}
+            title="Архив непереведённых скриптов"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
             <FaFolderOpen />
           </button>
-          <button onClick={handleSaveEditedScript} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+
+          <button
+            onClick={handleSaveEditedScript}
+            title="Сохранить"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer'
+            }}
+          >
             <FaSave />
           </button>
-          <button onClick={() => setIsFullscreen(prev => !prev)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+
+          <button
+            onClick={() => setIsFullscreen(prev => !prev)}
+            title={isFullscreen ? 'Свернуть в окно' : 'Развернуть на весь экран'}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer'
+            }}
+          >
             <FaExpandArrowsAlt />
           </button>
         </div>
@@ -221,33 +250,68 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
       <Editor
         height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
         language="pascal"
-        theme="vs-dark"
+        theme="vs"
         value={code}
         onChange={(value) => setCode(value || '')}
         options={{ fontSize: 14 }}
       />
 
       <Drawer
-        title="Загрузка скрипта и список файлов"
+        title="Выберите файл для загрузки (.txt)"
         placement="left"
         closable={true}
         onClose={closeDrawer}
         open={drawerVisible}
-        width={400}
+        width={500}
       >
         {/* Форма для загрузки файла */}
         <form
           onSubmit={handleUpload}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', gap: '10px' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            marginBottom: '20px',
+            gap: '10px',
+          }}
         >
-          <label style={{
-            border: '1px solid #198754',
-            color: '#198754',
-            padding: '6px 14px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontFamily: 'Proxima Nova, sans-serif',
-          }}>
+          {/* Кнопка выбора файла */}
+          <label
+            style={{
+              border: '2px solid #198754',
+              color: '#198754',
+              backgroundColor: 'transparent',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontFamily: 'Proxima Nova, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              textAlign: 'center',
+              width: '100%',
+              transition: 'all 0.3s ease',
+              display: 'inline-block',
+              userSelect: 'none',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e6f4eb';
+              e.currentTarget.style.color = '#146c43';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#198754';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.backgroundColor = '#cfead8';
+              e.currentTarget.style.transform = 'scale(0.97)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.backgroundColor = '#e6f4eb';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+          >
             Выберите файл
             <input
               type="file"
@@ -256,25 +320,84 @@ function UntranslatedCodeViewer({ fileName, logToTerminal, onSaveSuccess, onSele
               style={{ display: 'none' }}
             />
           </label>
-          <span style={{ fontFamily: 'Proxima Nova, sans-serif', fontSize: '14px' }}>
-            {selectedFile ? selectedFile.name : 'Файл не выбран'}
+
+          {/* Название выбранного файла */}
+          <span style={{
+            fontFamily: 'Proxima Nova, sans-serif',
+            fontSize: '14px',
+            textAlign: 'center',
+            color: '#555',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            display: 'block',
+            width: '100%',
+            maxWidth: '100%',
+          }}>
+            {selectedFile
+              ? (selectedFile.name.length > 20
+                ? `${selectedFile.name.slice(0, 17)}...${selectedFile.name.split('.').pop()}`
+                : selectedFile.name)
+              : 'Файл не выбран'}
           </span>
+
+          {/* Кнопка загрузки */}
           <button
             type="submit"
             disabled={isUploading}
             style={{
-              border: '1px solid #198754',
+              border: '2px solid #198754',
               color: '#198754',
               backgroundColor: 'transparent',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              cursor: 'pointer',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              cursor: isUploading ? 'not-allowed' : 'pointer',
               fontFamily: 'Proxima Nova, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              textAlign: 'center',
+              width: '100%',
+              transition: 'all 0.3s ease',
+              userSelect: 'none',
+              pointerEvents: isUploading ? 'none' : 'auto',
+            }}
+            onMouseEnter={(e) => {
+              if (!isUploading) {
+                e.currentTarget.style.backgroundColor = '#e6f4eb';
+                e.currentTarget.style.color = '#146c43';
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isUploading) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#198754';
+                e.currentTarget.style.transform = 'scale(1)';
+              }
+            }}
+            onMouseDown={(e) => {
+              if (!isUploading) {
+                e.currentTarget.style.backgroundColor = '#cfead8';
+                e.currentTarget.style.transform = 'scale(0.97)';
+              }
+            }}
+            onMouseUp={(e) => {
+              if (!isUploading) {
+                e.currentTarget.style.backgroundColor = '#e6f4eb';
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }
             }}
           >
             {isUploading ? 'Загрузка...' : 'Загрузить'}
           </button>
         </form>
+
+        
+        <hr style={{
+          border: 'none',
+          borderTop: '1px solid #ccc',
+          margin: '20px 0'
+        }} />
 
         {/* Список файлов */}
         <FileList

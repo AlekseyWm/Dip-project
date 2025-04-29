@@ -8,8 +8,8 @@ function Header() {
     <header className="header">
       <div className="header-left">
         <img src={logo} alt="Логотип" className="logo" />
-        <div className="menu-item">Главная</div>
-        <div className="menu-item active">Интерпретатор</div>
+        {/* <div className="menu-item">Главная</div>
+        <div className="menu-item active">Интерпретатор</div> */}
       </div>
       <div className="header-right">
         <div className="user-info">

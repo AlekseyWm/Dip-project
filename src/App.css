@@ -1,6 +1,4 @@
-.App {
-  text-align: center;
-}
+
 
 .SplitPane {
   position: relative !important;
@@ -52,19 +50,6 @@
   }
 }
 
-.button-upload {
-  border: 1px solid #198754;
-  color: #198754;
-  background-color: transparent;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Proxima Nova', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  transition: background-color 0.2s ease-in-out, color 0.2s;
-}
-
 .button-upload:hover {
   background-color: #e6f4eb;
 }
@@ -94,4 +79,69 @@
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(120, 120, 120, 0.5) transparent; 
+}
+
+.terminal-container {
+  font-family: monospace !important;
+  font-size: 14px !important;
+  letter-spacing: normal !important;
+  text-align: left !important;
+  line-height: 1.5 !important;
+  white-space: pre !important;
+  color: #fff;
+  background-color: #000;
+}
+
+.btn-translate {
+  position: relative;
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: 'Proxima Nova', sans-serif;
+  color: #ffffff;
+  background: #0868c1;
+  border: 2px solid #277fd8;
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  z-index: 1;
+}
+
+.btn-translate::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 30% 30%, #277fd8 0%, #0055a4 30%, transparent 70%
+  ),
+  radial-gradient(
+    circle at 70% 70%, #4a86e0 0%, #1f7ddb 25%, transparent 60%
+  );
+  background-blend-mode: screen;
+  z-index: -1;
+  filter: blur(15px);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.btn-translate:hover::before {
+  opacity: 1;
+}
+
+.btn-translate:hover {
+  background: rgba(0, 85, 164, 0.08); /* лёгкий голубой туман при наведении */
+}
+
+.btn-translate:active {
+  transform: scale(0.96);
+}
+
+.btn-translate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

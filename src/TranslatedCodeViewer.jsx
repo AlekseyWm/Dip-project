@@ -102,14 +102,13 @@ function TranslatedCodeViewer({
 
   return (
     <div
-      onDoubleClick={() => setIsFullscreen(prev => !prev)}
       style={{
         position: isFullscreen ? 'fixed' : 'relative',
         top: isFullscreen ? 0 : 'auto',
         left: isFullscreen ? 0 : 'auto',
         width: isFullscreen ? '100vw' : '100%',
         height: isFullscreen ? '100vh' : 'auto',
-        zIndex: isFullscreen ? 9999 : 'auto',
+        zIndex: isFullscreen ? 10 : 'auto',
         backgroundColor: '#1e1e1e',
         border: '1px solid #ccc',
         borderRadius: '8px',
@@ -120,8 +119,8 @@ function TranslatedCodeViewer({
       }}
     >
       <div style={{
-        backgroundColor: '#1e1e1e',
-        color: '#fff',
+        backgroundColor: '#f0f0f0',
+        color: '#222',
         padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
@@ -148,8 +147,8 @@ function TranslatedCodeViewer({
               fontSize: '14px',
               background: 'transparent',
               border: 'none',
-              borderBottom: '1px solid #fff',
-              color: '#fff',
+              borderBottom: '1px solid #222',
+              color: '#222',
               fontFamily: 'monospace',
               width: '100%',
             }}
@@ -166,7 +165,7 @@ function TranslatedCodeViewer({
               display: 'inline-block',
               cursor: 'text',
               fontWeight: 'bold',
-              color: '#fff'
+              color: '#222'
             }}
           >
             {editedFileName || 'Переведённый скрипт.py'}
@@ -174,22 +173,53 @@ function TranslatedCodeViewer({
         )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={openDrawer} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>
+          <button
+            onClick={openDrawer}
+            title="Архив переведённых скриптов"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer',
+              fontSize: '18px'
+            }}
+          >
             <FaFolderOpen />
           </button>
-          <button onClick={handleSaveEdited} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+
+          <button
+            onClick={handleSaveEdited}
+            title="Сохранить"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer'
+            }}
+          >
             <FaSave />
           </button>
-          <button onClick={() => setIsFullscreen(prev => !prev)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+
+          <button
+            onClick={() => setIsFullscreen(prev => !prev)}
+            title={isFullscreen ? 'Свернуть в окно' : 'Развернуть на весь экран'}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#222',
+              cursor: 'pointer'
+            }}
+          >
             <FaExpandArrowsAlt />
           </button>
         </div>
+
       </div>
 
       <Editor
         height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
         language="python"
-        theme="vs-dark"
+        theme="vs"
         value={code}
         onChange={(value) => setCode(value || '')}
         options={{ fontSize: 14 }}
@@ -201,7 +231,7 @@ function TranslatedCodeViewer({
         closable={true}
         onClose={closeDrawer}
         open={drawerVisible}
-        width={400}
+        width={500}
       >
         <FileList
           bucketName="scripts-translated"

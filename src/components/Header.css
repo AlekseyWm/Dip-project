@@ -1,5 +1,5 @@
 .header {
-    background-color: #0d4a88;
+    background-color: #035bae;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -40,7 +40,7 @@
   .menu-item.active {
     background-color: white;
     font-weight: 600;
-    color: #0561b8ea;
+    color: #035bae;
     border-bottom: 4px solid #ffffff;
     border-radius: 4px 4px 0 0;
     box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.3);

@@ -1,12 +1,11 @@
 // src/App.js
 import React, { useRef, useState, useEffect } from 'react';
 import TerminalWindow from './TerminalWindow';
-import FileUploader from './FileUploader';
-import FileList from './FileList';
 import UntranslatedCodeViewer from './UntranslatedCodeViewer';
 import TranslatedCodeViewer from './TranslatedCodeViewer';
 import Header from './components/Header';
 import Split from 'react-split';
+import '../src/App.css';
 
 function App() {
   const terminalRef = useRef(null);
@@ -188,21 +187,13 @@ function App() {
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              onClick={handleTranslate}
-              disabled={isTranslating}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: '#0055a4',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-            >
-              {isTranslating ? 'Интерпретируем...' : 'Интерпретировать'}
-            </button>
+          < button
+            onClick={handleTranslate}
+            disabled={isTranslating}
+            className="btn-translate"
+          >
+            {isTranslating ? 'Интерпретируем...' : 'Интерпретировать'}
+          </button>
           </div>
         </div>
 
@@ -244,10 +235,12 @@ function App() {
           </Split>
         </div>
 
-        {/* Терминал */}
+        {/* Терминал
         <div style={{ marginTop: '10px' }}>
-          <TerminalWindow terminalRef={terminalRef} />
-        </div>
+          <div className='terminal-container'>
+            <TerminalWindow terminalRef={terminalRef} />
+          </div>
+        </div> */}
       </div>
     </div>
   );
