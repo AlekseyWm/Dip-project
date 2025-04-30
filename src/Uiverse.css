@@ -1,0 +1,51 @@
+/* src/Uiverse.css */
+
+.uiverse-btn {
+ --color: #00A97F;
+ padding: 0.8em 1.7em;
+ background-color: transparent;
+ border-radius: .3em;
+ position: relative;
+ overflow: hidden;
+ cursor: pointer;
+ transition: .5s;
+ font-weight: 400;
+ font-size: 17px;
+ border: 1px solid var(--color);
+ text-transform: uppercase;
+ z-index: 1;
+}
+
+.uiverse-btn a {
+  color: var(--color);
+  padding: 0.8em 1.7em;
+  background-color: transparent;
+  position: relative;
+  overflow: hidden;
+  transition: .5s;
+  font-weight: 400;
+  font-size: 16px;
+  z-index: 2;
+ }
+
+ .uiverse-btn:hover {
+  -webkit-box-shadow: 1px 1px 13px #4f8869, -1px -1px 13px #61a464;
+  box-shadow: 1px 1px 13px #dff9ec, -1px -1px 13px #dbefe2;
+  color: #d6d6d6;
+  -webkit-transition: 400ms;
+  transition: 400ms;
+}
+
+.uiverse-btn:active {
+  -webkit-box-shadow: 1px 1px 13px #4f8869, -1px -1px 33px #61a464;
+  box-shadow: 1px 1px 13px #c5eac3, -1px -1px 33px #c5edcd;
+  color: #d6d6d6;
+  -webkit-transition: 100ms;
+  transition: 100ms;
+}
+ 
+
+
+
+
+ 
