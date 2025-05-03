@@ -67,6 +67,7 @@ function TranslatedCodeViewer({
     fetch('http://localhost:9999/api/application/update_translated_script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ file_name: editedFileName, code }),
     })
       .then((res) => {

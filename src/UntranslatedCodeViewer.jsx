@@ -4,13 +4,14 @@ import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaFolderOpen } from 'react-icons/fa';
 import { Drawer } from 'antd';
 import FileList from './FileList';
-import './Uiverse.css'; // <-- наш новый CSS
+import './Uiverse.css';
 
 function UntranslatedCodeViewer({
   fileName,
   logToTerminal,
   onSaveSuccess,
-  onSelectFile
+  onSelectFile,
+  userEmail
 }) {
   const [code, setCode] = useState('');
   const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
@@ -57,6 +58,7 @@ function UntranslatedCodeViewer({
     fetch(`http://localhost:9999/api/application/update_untranslated_script?file_name=${encodeURIComponent(editedFileName)}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
+      credentials: 'include',
       body: JSON.stringify({ file_name: editedFileName, content: code })
     })
       .then(res => res.ok ? res.json() : Promise.reject(res.status))
@@ -73,19 +75,21 @@ function UntranslatedCodeViewer({
 
   const handleUpload = e => {
     e.preventDefault();
+
     if (!selectedFile) return logToTerminal?.('Выберите файл перед загрузкой.');
     setIsUploading(true);
     logToTerminal?.(`Загружаем файл: ${selectedFile.name}`);
     const fd = new FormData();
     fd.append('file', selectedFile);
     fetch('http://localhost:9999/api/application/upload_script', {
-      method: 'POST', body: fd
+      method: 'POST', credentials: 'include', body: fd
     })
       .then(res => res.ok ? res.json() : Promise.reject(res.status))
       .then(data => {
         logToTerminal?.(data.message || 'Успешно!');
         setSelectedFile(null);
         setRefreshFileListTrigger(n => n + 1);
+        onSaveSuccess?.();
       })
       .catch(err => logToTerminal?.(`Ошибка загрузки: ${err}`))
       .finally(() => setIsUploading(false));

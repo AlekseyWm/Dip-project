@@ -6,13 +6,15 @@ import Header from './components/Header';
 import Split from 'react-split';
 import '../src/App.css';
 
+import Login from './Login';
+import ProgressModal from './ProgressModal';
+
 function App() {
   const terminalRef = useRef(null);
-  const logToTerminal = (msg) => {
-    if (terminalRef.current) {
-      terminalRef.current.writeln(msg);
-    }
-  };
+  const logToTerminal = (msg) => terminalRef.current?.writeln(msg);
+
+  const [userEmail, setUserEmail] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
 
   const [refreshUntranslatedTrigger, setRefreshUntranslatedTrigger] = useState(0);
   const [refreshTranslatedTrigger, setRefreshTranslatedTrigger] = useState(0);
@@ -22,20 +24,43 @@ function App() {
   const [overrideCode, setOverrideCode] = useState('');
   const [overrideFileName, setOverrideFileName] = useState('');
 
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const [progTotal, setProgTotal] = useState(0);
+  const [progCurrent, setProgCurrent] = useState(0);
 
-  // --- Обновление списка после загрузки
-  const handleUploadSuccess = () => {
-    setRefreshUntranslatedTrigger(prev => prev + 1);
-  };
+  // --- Авторизация
+  useEffect(() => {
+    fetch('http://localhost:9999/api/user/current', {
+      credentials: 'include',
+    })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        setUserEmail(data.email);
+        logToTerminal(`Сессия восстановлена: ${data.email}`);
+      })
+      .catch(() => {
+        logToTerminal('Сессия не активна. Требуется вход.');
+      })
+      .finally(() => setAuthChecked(true));
+  }, []);
 
-  // --- Выбор файла справа
-  const handleSelectFileRight = (fname) => {
-    setSelectedFileRight(fname);
-    setOverrideCode('');
-    setOverrideFileName('');
-    logToTerminal(`Выбран справа: ${fname}`);
+  const handleLogout = () => {
+    fetch('http://localhost:9999/api/auth/jwt/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then(res => {
+        if (res.ok) {
+          setUserEmail('');
+          logToTerminal('Вы вышли из аккаунта.');
+        } else {
+          logToTerminal('Ошибка выхода.');
+        }
+      })
+      .catch(err => logToTerminal('Ошибка выхода: ' + err));
   };
 
   // --- Процесс интерпретации
@@ -45,118 +70,58 @@ function App() {
       return;
     }
 
-    setIsTranslating(true);
-    setProgress(0);
+    setShowProgress(true);
+    setProgTotal(0);
+    setProgCurrent(0);
+    setOverrideCode('');
+    setOverrideFileName('');
 
-    const progressInterval = setInterval(() => {
-      setProgress(prev => (prev < 90 ? prev + 5 : prev));
-    }, 300);
+    const url = `http://localhost:9999/api/application/translate_code_file_stream?file_name=${encodeURIComponent(selectedFileLeft)}`;
+    const es = new EventSource(url);
+    const chunks = [];
 
-    const url = `http://localhost:9999/api/application/translate_code_file?file_name=${encodeURIComponent(selectedFileLeft)}`;
-    logToTerminal(`Запрос на интерпретацию: ${selectedFileLeft}`);
+    es.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      if (d.type === 'start') {
+        setProgTotal(d.total);
+      } else if (d.type === 'progress') {
+        chunks.push(d.block);
+        setProgCurrent(d.current);
+      } else if (d.type === 'complete') {
+        es.close();
+        const result = chunks.join('\n\n');
+        setOverrideCode(result);
+        const base = selectedFileLeft.replace(/\.[^.]+$/, '');
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        setOverrideFileName(`${base} - ${userEmail} (${now}).py`);
+        logToTerminal('Интерпретация завершена.');
+      }
+    };
 
-    fetch(url, { method: 'POST' })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Ошибка HTTP: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (data && data.translated_code) {
-          logToTerminal(`Интерпретация завершена, длина = ${data.translated_code.length}`);
-          setOverrideCode(data.translated_code);
-
-          const baseName = selectedFileLeft.replace(/\.[^.]+$/, '');
-          const now = new Date();
-          const yyyy = now.getFullYear();
-          const mm = String(now.getMonth() + 1).padStart(2, '0');
-          const dd = String(now.getDate()).padStart(2, '0');
-          const hh = String(now.getHours()).padStart(2, '0');
-          const min = String(now.getMinutes()).padStart(2, '0');
-          const ss = String(now.getSeconds()).padStart(2, '0');
-          const newName = `${baseName} (${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}).py`;
-
-          setOverrideFileName(newName);
-          setSelectedFileRight('');
-        } else {
-          logToTerminal('Не удалось получить "translated_code" из ответа.');
-        }
-      })
-      .catch((err) => {
-        logToTerminal(`Ошибка при интерпретации: ${err.message}`);
-      })
-      .finally(() => {
-        clearInterval(progressInterval);
-        setProgress(100);
-        setTimeout(() => setIsTranslating(false), 500);
-      });
+    es.onerror = (err) => {
+      es.close();
+      logToTerminal('Ошибка SSE: ' + err);
+      setShowProgress(false);
+    };
   };
+
+  if (!authChecked) return <div>Проверка авторизации...</div>;
+
+  if (!userEmail) {
+    return (
+      <Login
+        onLogin={(email) => {
+          setUserEmail(email);
+          logToTerminal(`Успешный вход: ${email}`);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="App">
-      {/* Модальное окно прогресса */}
-      {isTranslating && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000
-        }}>
-          <div style={{
-            backgroundColor: '#f9f9f9',
-            padding: '25px 30px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
-            minWidth: '350px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              marginBottom: '20px',
-              fontFamily: 'Proxima Nova, sans-serif',
-              fontSize: '18px',
-              fontWeight: 'Semibold',
-              color: '#rgb(36, 36, 41),'
-            }}>
-              Идёт интерпретация...
-            </div>
+      <Header userEmail={userEmail} onLogout={handleLogout} />
 
-            {/* Прогрессбар */}
-            <div style={{
-              backgroundColor: '#ddd',
-              borderRadius: '5px',
-              overflow: 'hidden',
-              height: '18px',
-              position: 'relative'
-            }}>
-              <div style={{
-                width: `${progress}%`,
-                height: '100%',
-                background: `linear-gradient(270deg, rgb(168, 192, 213), rgb(108, 137, 154), rgb(114, 146, 191), rgb(124, 158, 192), rgb(168, 192, 213))`,
-                backgroundSize: '400% 400%',
-                animation: 'waveAnimation 8s ease infinite',
-                transition: 'width 0.3s ease'
-              }} />
-            </div>
-
-            {/* Ключевые кадры анимации плавной волны */}
-            <style>
-              {`
-                @keyframes waveAnimation {
-                  0% { background-position: 0% 50%; }
-                  50% { background-position: 100% 50%; }
-                  100% { background-position: 0% 50%; }
-                }
-              `}
-            </style>
-
-          </div>
-        </div>
-      )}
-
-      {/* Основной интерфейс */}
-      <Header />
       <div style={{ padding: '15px 10px' }}>
         {/* Верхняя панель */}
         <div style={{
@@ -178,10 +143,9 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               onClick={handleTranslate}
-              disabled={isTranslating}
               className="btn-translate"
             >
-              {isTranslating ? 'Интерпретируем...' : 'Интерпретировать'}
+              Интерпретировать
             </button>
           </div>
         </div>
@@ -231,6 +195,14 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Модальное окно прогресса */}
+      <ProgressModal
+        open={showProgress}
+        total={progTotal}
+        current={progCurrent}
+        onClose={() => setShowProgress(false)}
+      />
     </div>
   );
 }

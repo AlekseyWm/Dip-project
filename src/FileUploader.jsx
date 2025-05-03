@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function FileUploader({ logToTerminal, onUploadSuccess }) {
+function FileUploader({ logToTerminal, onUploadSuccess, userEmail }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -12,8 +12,16 @@ function FileUploader({ logToTerminal, onUploadSuccess }) {
 
   const handleUpload = (e) => {
     e.preventDefault();
+
+    // Проверка файла
     if (!selectedFile) {
       logToTerminal && logToTerminal('Выберите файл перед загрузкой.');
+      return;
+    }
+
+    // Проверка авторизации
+    if (!userEmail) {
+      logToTerminal && logToTerminal('Вы не авторизованы. Загрузка невозможна.');
       return;
     }
 
@@ -25,6 +33,7 @@ function FileUploader({ logToTerminal, onUploadSuccess }) {
 
     fetch('http://localhost:9999/api/application/upload_script', {
       method: 'POST',
+      credentials: 'include',
       body: formData
     })
       .then((response) => {
@@ -36,7 +45,7 @@ function FileUploader({ logToTerminal, onUploadSuccess }) {
       .then((data) => {
         logToTerminal && logToTerminal(data.message || 'Файл успешно загружен!');
         onUploadSuccess && onUploadSuccess();
-        setSelectedFile(null); // сброс
+        setSelectedFile(null);
       })
       .catch((error) => {
         logToTerminal && logToTerminal(`Ошибка при загрузке файла: ${error.message}`);
