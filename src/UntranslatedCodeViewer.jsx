@@ -1,7 +1,7 @@
 // src/UntranslatedCodeViewer.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaSave, FaExpandArrowsAlt, FaFolderOpen } from 'react-icons/fa';
+import { FaSave, FaExpandArrowsAlt, FaListUl, FaChevronDown } from 'react-icons/fa';
 import { Drawer } from 'antd';
 import FileList from './FileList';
 import './Uiverse.css';
@@ -23,10 +23,10 @@ function UntranslatedCodeViewer({
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadPanelCollapsed, setIsUploadPanelCollapsed] = useState(false); // <--- новое состояние
 
   const fileInputRef = useRef(null);
 
-  // загрузка контента
   useEffect(() => {
     if (!fileName) { setCode(''); return; }
     fetch(`http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encodeURIComponent(fileName)}`)
@@ -35,7 +35,6 @@ function UntranslatedCodeViewer({
       .catch(() => setCode('Ошибка при загрузке скрипта'));
   }, [fileName]);
 
-  // синхронизация имени
   useEffect(() => {
     setEditedFileName(fileName || 'Новый скрипт.txt');
   }, [fileName]);
@@ -75,7 +74,6 @@ function UntranslatedCodeViewer({
 
   const handleUpload = e => {
     e.preventDefault();
-
     if (!selectedFile) return logToTerminal?.('Выберите файл перед загрузкой.');
     setIsUploading(true);
     logToTerminal?.(`Загружаем файл: ${selectedFile.name}`);
@@ -108,7 +106,6 @@ function UntranslatedCodeViewer({
       borderRadius: 8,
       overflow: 'hidden'
     }}>
-      {/* Верхняя панель */}
       <div style={{
         backgroundColor: '#f0f0f0',
         color: '#222',
@@ -150,7 +147,7 @@ function UntranslatedCodeViewer({
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={openDrawer} title="Архив непереведённых скриптов" style={{ background:'none', border:'none', cursor:'pointer' }}>
-            <FaFolderOpen />
+            <FaListUl />
           </button>
           <button onClick={handleSave} title="Сохранить" style={{ background:'none', border:'none', cursor:'pointer' }}>
             <FaSave />
@@ -165,7 +162,6 @@ function UntranslatedCodeViewer({
         </div>
       </div>
 
-      {/* Monaco Editor */}
       <Editor
         height={isFullscreen ? 'calc(100vh - 40px)' : 400}
         language="pascal"
@@ -175,60 +171,116 @@ function UntranslatedCodeViewer({
         options={{ fontSize: 14 }}
       />
 
-      {/* Drawer с формой */}
       <Drawer
         title="Выберите файл для загрузки (.txt)"
         placement="left"
         closable
         onClose={closeDrawer}
         open={drawerVisible}
-        width={500}
+        width={600}
       >
-        <form onSubmit={handleUpload} style={{ display:'flex', flexDirection:'column', gap:20 }}>
-          {/* Кнопка «Выберите файл» */}
-          <button
-            type="button"
-            className="uiverse-btn"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <a href="#"><span>Выберите файл</span></a>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-          </button>
-
-          {/* Отображение имени выбранного файла */}
-          <span style={{
-            fontFamily: 'Proxima Nova, sans-serif',
+        {/* Кнопка сворачивания */}
+        <button
+          onClick={() => setIsUploadPanelCollapsed(!isUploadPanelCollapsed)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#1890ff',
+            cursor: 'pointer',
+            marginLeft: -5,
+            marginBottom: 20,
             fontSize: 14,
-            textAlign: 'center',
-            color: '#555',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            transition: 'color 0.3s ease'
+          }}
+        >
+          <FaChevronDown
+            size={14}
+            style={{
+              transition: 'transform 0.3s ease',
+              transform: isUploadPanelCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'
+            }}
+          />
+          {isUploadPanelCollapsed ? 'Развернуть меню загрузки' : 'Свернуть меню загрузки'}
+        </button>
+
+        {/* Форма загрузки, если не свернуто */}
+        {!isUploadPanelCollapsed && (
+          <>
+          <form onSubmit={handleUpload} style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            maxWidth: 600,
+            width: '100%',
+            marginBottom: 10
           }}>
-            {selectedFile
-              ? selectedFile.name.length > 30
-                ? `${selectedFile.name.slice(0,27)}…`
-                : selectedFile.name
-              : 'Файл не выбран'}
-          </span>
+            {/* Кнопка выбора файла */}
+            <button
+              type="button"
+              className="uiverse-btn"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                padding: '0.4em 1.4em',
+                fontSize: 14,
+                height: '38px',
+                minWidth: 110
+              }}
+            >
+              <a href="#"><span>ВЫБРАТЬ</span></a>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+            </button>
 
-          {/* Кнопка «Загрузить» */}
-          <button
-            type="submit"
-            className="uiverse-btn"
-            disabled={isUploading}
-          >
-            <a href="#"><span>{isUploading ? 'Загрузка…' : 'Загрузить'}</span></a>
-          </button>
-        </form>
+            {/* Название выбранного файла */}
+            <span
+              title={selectedFile ? selectedFile.name : 'Файл не выбран'}
+              style={{
+                display: 'block',
+                maxWidth: 150,
+                fontFamily: 'Proxima Nova, sans-serif',
+                fontSize: 14,
+                color: '#555',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'right'
+              }}
+            >
+              {selectedFile
+                ? selectedFile.name.length > 30
+                  ? `${selectedFile.name.slice(0, 27)}…`
+                  : selectedFile.name
+                : 'Файл не выбран'}
+            </span>
 
+            {/* Кнопка загрузки */}
+            <button
+              type="submit"
+              className="uiverse-btn"
+              disabled={isUploading}
+              style={{
+                padding: '0.4em 1.4em',
+                fontSize: 14,
+                height: '38px',
+                minWidth: 110
+              }}
+            >
+              <a href="#"><span>ЗАГРУЗИТЬ</span></a>
+            </button>
+          </form>
+          </>
+        )}
         <hr style={{ margin: '20px 0', borderTop: '1px solid #ccc' }} />
 
+        {/* Список файлов — всегда виден */}
         <FileList
           bucketName="scripts-untranslated"
           refreshTrigger={refreshFileListTrigger}

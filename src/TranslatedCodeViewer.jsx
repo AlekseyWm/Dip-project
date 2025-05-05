@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaUndo, FaSave, FaExpandArrowsAlt, FaFolderOpen } from 'react-icons/fa';
+import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
 import { Drawer, Button } from 'antd';
 import FileList from './FileList';
 
@@ -182,10 +182,9 @@ function TranslatedCodeViewer({
               border: 'none',
               color: '#222',
               cursor: 'pointer',
-              fontSize: '18px'
             }}
           >
-            <FaFolderOpen />
+            <FaListUl />
           </button>
 
           <button

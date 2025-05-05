@@ -5,13 +5,13 @@ import TranslatedCodeViewer from './TranslatedCodeViewer';
 import Header from './components/Header';
 import Split from 'react-split';
 import '../src/App.css';
-
 import Login from './Login';
 import ProgressModal from './ProgressModal';
 
 function App() {
   const terminalRef = useRef(null);
   const logToTerminal = (msg) => terminalRef.current?.writeln(msg);
+  const esRef = useRef(null); 
 
   const [userEmail, setUserEmail] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
@@ -78,6 +78,7 @@ function App() {
 
     const url = `http://localhost:9999/api/application/translate_code_file_stream?file_name=${encodeURIComponent(selectedFileLeft)}`;
     const es = new EventSource(url);
+    esRef.current = es;
     const chunks = [];
 
     es.onmessage = (e) => {
@@ -89,17 +90,20 @@ function App() {
         setProgCurrent(d.current);
       } else if (d.type === 'complete') {
         es.close();
+        esRef.current = null;
         const result = chunks.join('\n\n');
         setOverrideCode(result);
         const base = selectedFileLeft.replace(/\.[^.]+$/, '');
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         setOverrideFileName(`${base} - ${userEmail} (${now}).py`);
+        setOverrideCode(result);
         logToTerminal('Интерпретация завершена.');
       }
     };
 
     es.onerror = (err) => {
       es.close();
+      esRef.current = null;
       logToTerminal('Ошибка SSE: ' + err);
       setShowProgress(false);
     };
@@ -201,7 +205,14 @@ function App() {
         open={showProgress}
         total={progTotal}
         current={progCurrent}
-        onClose={() => setShowProgress(false)}
+        onClose={() => {
+          if (esRef.current) {
+            esRef.current.close();
+            esRef.current = null;
+            logToTerminal('Интерпретация была принудительно остановлена.');
+          }
+          setShowProgress(false);
+        }}
       />
     </div>
   );
