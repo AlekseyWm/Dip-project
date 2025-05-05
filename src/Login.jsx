@@ -1,35 +1,54 @@
-// src/Login.jsx
 import React, { useState } from 'react';
+import './Login.css';
+import logo from './data/img/NM3_logo.png';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function Login({ onLogin }) {
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState('');
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError]         = useState('');
+  const [emailError, setEmailError]     = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
+    setEmailError('');
+    setPasswordError('');
+
+    let hasError = false;
+    if (!email.trim()) {
+      setEmailError('Не введён логин или почта');
+      hasError = true;
+    }
+    if (!password.trim()) {
+      setPasswordError('Не введён пароль');
+      hasError = true;
+    }
+    if (hasError) return;
 
     try {
-      // 1) Логинимся по JWT‑эндпоинту
       const res = await fetch('http://localhost:9999/api/auth/jwt/login', {
         method: 'POST',
-        credentials: 'include', // чтобы куки сохранились
+        credentials: 'include',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `grant_type=&username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&scope=&client_id=&client_secret=`
       });
 
       if (!res.ok) {
-        // читаем ошибку, если есть JSON
         let errText = res.statusText;
-        try { 
-          const err = await res.json(); 
-          errText = err.detail || JSON.stringify(err);
+        try {
+          const err = await res.json();
+          if (Array.isArray(err.detail)) {
+            errText = err.detail.map(e => e.msg).join(', ');
+          } else {
+            errText = err.detail || JSON.stringify(err);
+          }
         } catch {}
         throw new Error(errText);
       }
 
-      // 2) Запрашиваем текущего залогиненного пользователя
       const me = await fetch('http://localhost:9999/api/user/current', {
         credentials: 'include'
       });
@@ -37,45 +56,49 @@ export default function Login({ onLogin }) {
         throw new Error(`Не удалось получить current-user (${me.status})`);
       }
       const profile = await me.json();
-
-      // 3) Вызываем onLogin с email из профиля
-      onLogin(/* токен в куках */ profile.email);
-    }
-    catch (err) {
+      onLogin(profile.email);
+    } catch (err) {
       setError('Ошибка входа: ' + err.message);
     }
   };
 
   return (
-    <div style={{
-      maxWidth: 360, margin: '100px auto', padding: 20,
-      border: '1px solid #ccc', borderRadius: 6
-    }}>
-      <h2>Вход</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 10 }}>
-          <label>Email:</label><br/>
+    <div className="login-background">
+      <div className="login-container">
+        <img src={logo} alt="Норникель" className="login-logo" />
+        <h2>Добро пожаловать!</h2>
+        {error && <p className="login-error">{error}</p>}
+        <form onSubmit={handleSubmit} className="login-form">
+          {emailError && <p className="field-error">{emailError}</p>}
           <input
             type="text"
+            placeholder="Логин/Почта"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            style={{ width:'100%', padding:6 }}
           />
-        </div>
-        <div style={{ marginBottom: 10 }}>
-          <label>Пароль:</label><br/>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{ width:'100%', padding:6 }}
-          />
-        </div>
-        <button type="submit" style={{ width:'100%', padding:8 }}>
-          Войти
-        </button>
-      </form>
+
+          {passwordError && <p className="field-error">{passwordError}</p>}
+          <div className="password-container">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Пароль"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label="Показать/скрыть пароль"
+            >
+              {showPassword ? <FaEye /> : <FaEyeSlash />}
+            </button>
+          </div>
+
+          <p className="login-note">Для входа в систему нужно авторизироваться!</p>
+          <button type="submit" className="login-form-btn">Войти</button>
+        </form>
+      </div>
     </div>
   );
 }
