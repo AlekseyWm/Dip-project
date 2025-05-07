@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
-import { Drawer, Button } from 'antd';
+import { Drawer } from 'antd';
 import FileList from './FileList';
+
+// Убирает все подряд “ - Кто-то (YYYY-MM-DD HH:MM:SS)”
+const CLEAN_LOGIN_DATE_REGEX = /( - [^()]+ \(\d{4}-\d{2}-\d{2}(?: [\d:]{8})?\))+/g;
+function stripLoginDate(name) {
+  return name.replace(CLEAN_LOGIN_DATE_REGEX, '').trim();
+}
 
 function TranslatedCodeViewer({
   fileName,
@@ -23,9 +29,11 @@ function TranslatedCodeViewer({
 
   useEffect(() => {
     if (overrideCode) {
+      const rawName = overrideFileName || 'Новый файл.py';
+      const cleanName = stripLoginDate(rawName);
       setCode(overrideCode);
-      setCurrentFileName(overrideFileName || 'Новый файл.py');
-      setEditedFileName(overrideFileName || 'Новый файл.py');
+      setCurrentFileName(cleanName);
+      setEditedFileName(cleanName);
       return;
     }
 
@@ -38,9 +46,10 @@ function TranslatedCodeViewer({
         })
         .then((data) => {
           if (data && data.content) {
+            const cleanName = stripLoginDate(fileName);
             setCode(data.content);
-            setCurrentFileName(fileName);
-            setEditedFileName(fileName);
+            setCurrentFileName(cleanName);
+            setEditedFileName(cleanName);
           } else {
             setCode('Ошибка: не получено поле content');
           }
@@ -177,12 +186,7 @@ function TranslatedCodeViewer({
           <button
             onClick={openDrawer}
             title="Архив переведённых скриптов"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#222',
-              cursor: 'pointer',
-            }}
+            style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
           >
             <FaListUl />
           </button>
@@ -190,12 +194,7 @@ function TranslatedCodeViewer({
           <button
             onClick={handleSaveEdited}
             title="Сохранить"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#222',
-              cursor: 'pointer'
-            }}
+            style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
           >
             <FaSave />
           </button>
@@ -203,17 +202,11 @@ function TranslatedCodeViewer({
           <button
             onClick={() => setIsFullscreen(prev => !prev)}
             title={isFullscreen ? 'Свернуть в окно' : 'Развернуть на весь экран'}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#222',
-              cursor: 'pointer'
-            }}
+            style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
           >
             <FaExpandArrowsAlt />
           </button>
         </div>
-
       </div>
 
       <Editor
@@ -228,10 +221,10 @@ function TranslatedCodeViewer({
       <Drawer
         title="Выберите файл для загрузки (.py)"
         placement="right"
-        closable={true}
+        closable
         onClose={closeDrawer}
         open={drawerVisible}
-        width={500}
+        width={650}
       >
         <FileList
           bucketName="scripts-translated"
