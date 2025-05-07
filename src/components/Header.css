@@ -1,82 +1,134 @@
 .header {
-    background-color: #035bae;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 40px;
-    font-family: 'Proxima Nova', sans-serif;
-    color: white;
-    height: 60px;
-  }
-  
-  .header-left {
-    height: inherit;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  
-  .logo {
-    height: 32px;
-    margin-right: 20px;
-  }
-  
-  .menu-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    font-weight: 500;
-    margin-left: 20px;
-  }
+  background-color: #035bae;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  height: 70px;
+}
 
-  .menu-item:first-of-type {
-    margin-left: 6vw;
-  }
-  
-  .menu-item.active {
-    background-color: white;
-    font-weight: 600;
-    color: #035bae;
-    border-bottom: 4px solid #ffffff;
-    border-radius: 4px 4px 0 0;
-    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-  }
-  
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .user-info {
-    font-size: 16px;
-    text-align: right;
-  }
-  
-  .user-name {
-    font-weight: bold;
-  }
-  
-  .user-role {
-    font-size: 14px;
-  }
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+}
 
-  .logout-button {
-    background-color: transparent;
-    border: 1px solid #888;
-    padding: 5px 10px;
-    margin-left: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  
-  .logout-button:hover {
-    background-color: #f2f2f2;
-  }
-  
-  
+.header-right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.header-button {
+  background: white;
+  color: #035bae;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease-in-out;
+}
+
+.header-button:hover {
+  background-color: #e0eaf5;
+}
+
+.user-menu-wrapper {
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  width: 300px;
+  padding: 12px 16px;
+  z-index: 1000;
+}
+
+.user-header {
+  margin-bottom: 10px;
+}
+
+.user-header div {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-header strong {
+  display: block;
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.user-fullname,
+.user-email {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email a {
+  color: #035bae;
+  text-decoration: none;
+}
+
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.user-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-action:hover {
+  background-color: #f2f2f2;
+}
+
+
+.logout:hover {
+  background-color: #c84f4f;
+  color: white;
+}
+
+.styled-button {
+  background-color: white;
+  color: #035bae;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.styled-button:hover {
+  background-color: #ebeef0;
+  border: #c4d0db;
+}
+
+.icon-button {
+  padding: 7px 10px;
+}

@@ -56,7 +56,7 @@ export default function Login({ onLogin }) {
         throw new Error(`Не удалось получить current-user (${me.status})`);
       }
       const profile = await me.json();
-      onLogin(profile.email);
+      onLogin({ email: profile.email, fullName: profile.login });
     } catch (err) {
       setError('Ошибка входа: ' + err.message);
     }
