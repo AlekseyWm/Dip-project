@@ -1,0 +1,10 @@
+# Переводить все текстовые файлы на LF в репозитории
+* text=auto eol=lf
+
+# Явно для JS/CSS/JSON (если нужно)
+*.js   text eol=lf
+*.css  text eol=lf
+*.json text eol=lf
+
+# У Monaco тоже LF
+public/monaco/** text eol=lf

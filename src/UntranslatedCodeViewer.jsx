@@ -288,6 +288,7 @@ function UntranslatedCodeViewer({
 
           <FileList
             bucketName="scripts-untranslated"
+            mode="untranslated"
             refreshTrigger={refreshList}
             onSelectFile={fname => { onSelectFile?.(fname); setDrawer(false); }}
             onDeleteSuccess={() => setRefresh(r => r + 1)}

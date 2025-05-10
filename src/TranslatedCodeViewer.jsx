@@ -241,6 +241,7 @@ function TranslatedCodeViewer({
         >
           <FileList
             bucketName="scripts-translated"
+            mode="translated"
             refreshTrigger={refreshFileListTrigger}
             onSelectFile={handleSelectFile}
             onDeleteSuccess={() => setRefreshFileListTrigger(p => p + 1)}

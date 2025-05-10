@@ -1,3 +1,7 @@
+body, html {
+  overflow-x: hidden !important;
+  max-width: 100vw;
+}
 
 
 .SplitPane {
@@ -54,8 +58,6 @@
   background-color: #e6f4eb;
 }
 
-/* СКРОЛЛ НА ВСЁМ САЙТЕ */
-
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   width: 8px;
@@ -82,68 +84,12 @@
 }
 
 
+@media screen and (max-width: 1000px) {
+  .App {
+    padding: 5px !important;
+  }
 
-.terminal-container {
-  font-family: monospace !important;
-  font-size: 14px !important;
-  letter-spacing: normal !important;
-  text-align: left !important;
-  line-height: 1.5 !important;
-  white-space: pre !important;
-  color: #fff;
-  background-color: #000;
-}
-
-.btn-translate {
-  position: relative;
-  display: inline-block;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: bold;
-  font-family: 'Proxima Nova', sans-serif;
-  color: #ffffff;
-  background: #0868c1;
-  border: 2px solid #277fd8;
-  border-radius: 12px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: all 0.4s ease;
-  z-index: 1;
-}
-
-.btn-translate::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at 30% 30%, #277fd8 0%, #0055a4 30%, transparent 70%
-  ),
-  radial-gradient(
-    circle at 70% 70%, #4a86e0 0%, #1f7ddb 25%, transparent 60%
-  );
-  background-blend-mode: screen;
-  z-index: -1;
-  filter: blur(15px);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.btn-translate:hover::before {
-  opacity: 1;
-}
-
-.btn-translate:hover {
-  background: rgba(0, 85, 164, 0.08); /* лёгкий голубой туман при наведении */
-}
-
-.btn-translate:active {
-  transform: scale(0.96);
-}
-
-.btn-translate:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  .split {
+    display: block !important;
+  }
 }

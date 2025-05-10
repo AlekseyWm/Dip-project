@@ -4,7 +4,16 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'antd/dist/reset.css';
+import { loader } from '@monaco-editor/react';
 
+// Tell Monaco where to find its “vs” folder in public/
+loader.config({
+  paths: {
+    vs: '/monaco/vs'
+  }
+});
+
+// Suppress ResizeObserver warnings
 const observerErrorHandler = (e) => {
   if (e.message && e.message.includes('ResizeObserver loop')) {
     e.stopImmediatePropagation();

@@ -2,7 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { FaDownload, FaTrash } from 'react-icons/fa';
 import { message } from 'antd';
 
-function FileList({ bucketName, onSelectFile, refreshTrigger = 0, onDeleteSuccess, logToTerminal }) {
+function FileList({
+  bucketName,
+  onSelectFile,
+  refreshTrigger = 0,
+  onDeleteSuccess,
+  logToTerminal,
+  mode = 'translated' // 'translated' | 'untranslated'
+}) {
   const [files, setFiles] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [messageApi, contextHolder] = message.useMessage();
@@ -49,7 +56,11 @@ function FileList({ bucketName, onSelectFile, refreshTrigger = 0, onDeleteSucces
   };
 
   const handleDownload = (fileName) => {
-    fetch(`http://localhost:9999/api/application/download_translated_script?file_name=${encodeURIComponent(fileName)}`, {
+    const endpoint = mode === 'translated'
+      ? 'download_translated_script'
+      : 'download_untranslated_script';
+
+    fetch(`http://localhost:9999/api/application/${endpoint}?file_name=${encodeURIComponent(fileName)}`, {
       credentials: 'include'
     })
       .then(r => r.blob())
@@ -73,7 +84,11 @@ function FileList({ bucketName, onSelectFile, refreshTrigger = 0, onDeleteSucces
   const handleDelete = (fileName) => {
     if (!window.confirm(`Удалить "${fileName}"?`)) return;
 
-    fetch(`http://localhost:9999/api/application/delete_translated_script?file_name=${encodeURIComponent(fileName)}`, {
+    const endpoint = mode === 'translated'
+      ? 'delete_translated_script'
+      : 'delete_untranslated_script';
+
+    fetch(`http://localhost:9999/api/application/${endpoint}?file_name=${encodeURIComponent(fileName)}`, {
       method: 'DELETE',
       credentials: 'include'
     })
@@ -81,7 +96,7 @@ function FileList({ bucketName, onSelectFile, refreshTrigger = 0, onDeleteSucces
       .then(({ message: msg }) => {
         messageApi.success(`Файл "${fileName}" удалён.`);
         logToTerminal?.(msg || `Файл "${fileName}" удалён.`);
-        onDeleteSuccess?.();  // обновление списка
+        onDeleteSuccess?.();
       })
       .catch(e => {
         messageApi.error(`Ошибка при удалении "${fileName}".`);

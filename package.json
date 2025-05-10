@@ -463,6 +463,7 @@
     "minimist": "^1.2.8",
     "minipass": "^7.1.2",
     "mkdirp": "^0.5.6",
+    "monaco-editor": "^0.52.2",
     "ms": "^2.1.3",
     "multicast-dns": "^7.2.5",
     "mz": "^2.7.0",

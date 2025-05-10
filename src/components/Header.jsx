@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { FaAddressCard, FaMoon, FaQuestionCircle, FaSignOutAlt, FaTerminal } from "react-icons/fa";
 import '../components/Header.css';
-import { FaAddressCard, FaMoon, FaQuestionCircle, FaSignOutAlt  } from "react-icons/fa";
 
-
-
-function Header({ userEmail, userFullName, onLogout, onTranslate }) {
+function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTerminal }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -28,26 +26,29 @@ function Header({ userEmail, userFullName, onLogout, onTranslate }) {
         <div className="header-right">
           <button className="styled-button" onClick={onTranslate}>Интерпретировать</button>
           <button className="styled-button">Раскладка</button>
+
+          <button
+            className="styled-button icon-button"
+            onClick={onToggleTerminal}
+            title="Показать/скрыть терминал"
+          >
+            <FaTerminal size={18} />
+          </button>
+
           <div className="user-menu-wrapper" ref={menuRef}>
             <button className="styled-button icon-button" onClick={() => setMenuOpen(!menuOpen)}>
               <FaAddressCard size={18} />
             </button>
             {menuOpen && (
               <div className="user-dropdown">
-               <div className="user-header">
+                <div className="user-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src="/logo-sm.svg" alt="Логотип" style={{ height: 32 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                      <div
-                        className="user-fullname"
-                        title={userFullName}
-                      >
+                      <div className="user-fullname" title={userFullName}>
                         {userFullName}
                       </div>
-                      <div
-                        className="user-email"
-                        title={userEmail}
-                      >
+                      <div className="user-email" title={userEmail}>
                         Почта: <a href={`mailto:${userEmail}`}>{userEmail}</a>
                       </div>
                     </div>
@@ -71,7 +72,6 @@ function Header({ userEmail, userFullName, onLogout, onTranslate }) {
             )}
           </div>
         </div>
-
       </header>
     </div>
   );
