@@ -1,15 +1,11 @@
+// src/TranslatedCodeViewer.jsx
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
 import { Drawer, message } from 'antd';
 import FileList from './FileList';
 
-const CLEAN_LOGIN_DATE_REGEX = /( - [^()]+ \(\d{4}-\d{2}-\d{2}(?: [\d:]{8})?\))+/g;
-function stripLoginDate(name) {
-  return name.replace(CLEAN_LOGIN_DATE_REGEX, '').trim();
-}
-
-function TranslatedCodeViewer({
+export default function TranslatedCodeViewer({
   fileName,
   overrideCode,
   overrideFileName,
@@ -17,241 +13,146 @@ function TranslatedCodeViewer({
   onSaveSuccess,
   onSelectFile
 }) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedFileName, setEditedFileName] = useState('');
-  const [code, setCode] = useState('');
-  const [currentFileName, setCurrentFileName] = useState('');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [refreshFileListTrigger, setRefreshFileListTrigger] = useState(0);
-
-  const [messageApi, contextHolder] = message.useMessage(); // ⬅️ уведомления
+  const [code, setCode]               = useState('');
+  const [editedFileName, setName]     = useState('');
+  const [isEditingName, setEditing]   = useState(false);
+  const [isFullscreen, setFullscreen] = useState(false);
+  const [drawerVisible, setDrawer]    = useState(false);
+  const [refreshTrigger, setRefresh]  = useState(0);
+  const [msgApi, contextHolder]       = message.useMessage();
 
   useEffect(() => {
     if (overrideCode) {
-      const rawName = overrideFileName || 'Новый файл.py';
-      const cleanName = stripLoginDate(rawName);
+      const name = overrideFileName || 'Новый файл.py';
+      setName(name);
       setCode(overrideCode);
-      setCurrentFileName(cleanName);
-      setEditedFileName(cleanName);
       return;
     }
-
-    if (fileName) {
-      const url = `http://localhost:9999/api/application/get_translated_script_content?file_name=${encodeURIComponent(fileName)}`;
-      fetch(url)
-        .then((res) => {
-          if (!res.ok) throw new Error(`Ошибка HTTP: ${res.status}`);
-          return res.json();
-        })
-        .then((data) => {
-          if (data && data.content) {
-            const cleanName = stripLoginDate(fileName);
-            setCode(data.content);
-            setCurrentFileName(cleanName);
-            setEditedFileName(cleanName);
-          } else {
-            setCode('Ошибка: не получено поле content');
-          }
-        })
-        .catch((err) => {
-          console.error('Ошибка при загрузке .py:', err);
-          setCode('Ошибка при загрузке скрипта');
-        });
+    if (!fileName) {
+      setName('Переведённый скрипт.py');
+      setCode('');
+      return;
     }
+    fetch(`http://localhost:9999/api/application/get_translated_script_content?file_name=${encodeURIComponent(fileName)}`, {
+      credentials:'include'
+    })
+      .then(r=>r.ok?r.json():Promise.reject(r.status))
+      .then(d=>{
+        setName(fileName);
+        setCode(d.content||'Нет поля content');
+      })
+      .catch(()=>setCode('Ошибка при загрузке'));
   }, [fileName, overrideCode, overrideFileName]);
 
-  const handleSaveEdited = () => {
-    if (!code.trim()) {
-      logToTerminal?.('Нельзя сохранить пустой скрипт (.py).');
-      return;
-    }
-    if (!editedFileName) {
-      logToTerminal?.('Нет имени файла для сохранения.');
-      return;
-    }
-
-    logToTerminal?.(`Сохраняем .py: ${editedFileName}`);
-
+  const handleSave = () => {
+    if (!code.trim())     return logToTerminal('Пустой скрипт нельзя сохранить.');
+    if (!editedFileName.trim()) return logToTerminal('Нет имени файла.');
+    logToTerminal(`Сохраняем .py: ${editedFileName}`);
     fetch('http://localhost:9999/api/application/update_translated_script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ file_name: editedFileName, code }),
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify({file_name:editedFileName, code})
     })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Ошибка HTTP: ${res.status}`);
-        return res.json();
+      .then(r=>r.ok?r.json():Promise.reject(r.status))
+      .then(()=>{
+        msgApi.open({type:'success', content:`"${editedFileName}" сохранён.`, duration:4});
+        onSaveSuccess();
       })
-      .then((data) => {
-        const finalMessage = `Файл "${editedFileName}" сохранён. Чтобы открыть его, воспользуйтесь архивом переведённых скриптов.`;
-
-        logToTerminal?.(finalMessage);
-        messageApi.open({
-          type: 'success',
-          content: finalMessage,
-          duration: 5
-        });
-
-        onSaveSuccess?.();
-      })
-      .catch((err) => {
-        logToTerminal?.(`Ошибка при сохранении .py: ${err.message}`);
-        messageApi.open({
-          type: 'error',
-          content: 'Ошибка при сохранении скрипта.',
-          duration: 5
-        });
+      .catch(e=>{
+        logToTerminal(`Ошибка сохранения: ${e}`);
+        msgApi.open({type:'error', content:'Ошибка при сохранении', duration:4});
       });
-  };
-
-  const openDrawer = () => {
-    setRefreshFileListTrigger(prev => prev + 1);
-    setDrawerVisible(true);
-  };
-
-  const closeDrawer = () => {
-    setDrawerVisible(false);
-  };
-
-  const handleSelectFile = (fname) => {
-    onSelectFile && onSelectFile(fname);
-    closeDrawer();
   };
 
   return (
     <>
       {contextHolder}
-
-      <div
-        style={{
-          position: isFullscreen ? 'fixed' : 'relative',
-          top: isFullscreen ? 0 : 'auto',
-          left: isFullscreen ? 0 : 'auto',
-          width: isFullscreen ? '100vw' : '100%',
-          height: isFullscreen ? '100vh' : 'auto',
-          zIndex: isFullscreen ? 10 : 'auto',
-          backgroundColor: '#1e1e1e',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          paddingRight: isFullscreen ? '10px' : '0px',
-          paddingLeft: isFullscreen ? '10px' : '0px',
-          boxSizing: 'border-box',
-        }}
-      >
+      <div style={{
+        position: isFullscreen?'fixed':'relative',
+        top: isFullscreen?0:'auto',
+        left: isFullscreen?0:'auto',
+        width: isFullscreen?'100vw':'100%',
+        height: isFullscreen?'100vh':'100%',
+        zIndex: isFullscreen?10:'auto',
+        display:'flex', flexDirection:'column',
+        border:'1px solid #ccc', background:'#1e1e1e', overflow:'hidden'
+      }}>
+        {/* Шапка */}
         <div style={{
-          backgroundColor: '#f0f0f0',
-          color: '#222',
-          padding: '8px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontFamily: 'monospace',
-          fontSize: '14px'
+          background:'#f0f0f0', color:'#222',
+          padding:'8px 12px', display:'flex',
+          alignItems:'center', justifyContent:'space-between',
+          borderBottom:'1px solid #ddd'
         }}>
-          {isEditingName ? (
-            <input
-              autoFocus
-              value={editedFileName}
-              onChange={(e) => setEditedFileName(e.target.value)}
-              onBlur={() => {
-                setIsEditingName(false);
-                setCurrentFileName(editedFileName);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setIsEditingName(false);
-                  setCurrentFileName(editedFileName);
-                }
-              }}
-              style={{
-                fontSize: '14px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid #222',
-                color: '#222',
-                fontFamily: 'monospace',
-                width: '100%',
-              }}
-            />
-          ) : (
-            <span
-              title={editedFileName || 'Переведённый скрипт.py'}
-              onClick={() => setIsEditingName(true)}
-              style={{
-                maxWidth: '200px',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                display: 'inline-block',
-                cursor: 'text',
-                fontWeight: 'bold',
-                color: '#222'
-              }}
-            >
-              {editedFileName || 'Переведённый скрипт.py'}
-            </span>
-          )}
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={openDrawer}
-              title="Архив переведённых скриптов"
-              style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
-            >
-              <FaListUl />
+          {isEditingName
+            ? <input
+                autoFocus
+                value={editedFileName}
+                onChange={e=>setName(e.target.value)}
+                onBlur={()=>setEditing(false)}
+                onKeyDown={e=>e.key==='Enter'&&setEditing(false)}
+                style={{
+                  flex:1, background:'transparent', border:'none',
+                  borderBottom:'1px solid #222', fontFamily:'monospace'
+                }}
+              />
+            : <span
+                onClick={()=>setEditing(true)}
+                title={editedFileName}
+                style={{
+                  flex:1, cursor:'text',
+                  overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                  fontWeight:'bold'
+                }}
+              >
+                {editedFileName || 'Переведённый скрипт.py'}
+              </span>
+          }
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={()=>{ setRefresh(r=>r+1); setDrawer(true) }} style={{border:'none',background:'none'}}>
+              <FaListUl/>
             </button>
-
-            <button
-              onClick={handleSaveEdited}
-              title="Сохранить"
-              style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
-            >
-              <FaSave />
+            <button onClick={handleSave} style={{border:'none',background:'none'}}>
+              <FaSave/>
             </button>
-
-            <button
-              onClick={() => setIsFullscreen(prev => !prev)}
-              title={isFullscreen ? 'Свернуть в окно' : 'Развернуть на весь экран'}
-              style={{ background: 'none', border: 'none', color: '#222', cursor: 'pointer' }}
-            >
-              <FaExpandArrowsAlt />
+            <button onClick={()=>setFullscreen(f=>!f)} style={{border:'none',background:'none'}}>
+              <FaExpandArrowsAlt/>
             </button>
           </div>
         </div>
 
-        <Editor
-          height={isFullscreen ? 'calc(100vh - 40px)' : '400px'}
-          language="python"
-          theme="vs"
-          value={code}
-          onChange={(value) => setCode(value || '')}
-          options={{ fontSize: 14 }}
-        />
+        {/* Monaco */}
+        <div style={{ flex:1, minHeight:0 }}>
+          <Editor
+            height="100%"
+            language="python"
+            theme="vs"
+            value={code}
+            onChange={v=>setCode(v||'')}
+            options={{ fontSize:14 }}
+          />
+        </div>
 
+        {/* Drawer */}
         <Drawer
-          title="Выберите файл для загрузки (.py)"
+          title="Архив переведённых скриптов"
           placement="right"
           closable
-          onClose={closeDrawer}
+          onClose={()=>setDrawer(false)}
           open={drawerVisible}
           width={650}
         >
           <FileList
             bucketName="scripts-translated"
             mode="translated"
-            refreshTrigger={refreshFileListTrigger}
-            onSelectFile={handleSelectFile}
-            onDeleteSuccess={() => setRefreshFileListTrigger(p => p + 1)}
+            refreshTrigger={refreshTrigger}
+            onSelectFile={fname => { onSelectFile(fname); setDrawer(false) }}
+            onDeleteSuccess={()=>setRefresh(r=>r+1)}
             logToTerminal={logToTerminal}
           />
-
         </Drawer>
       </div>
     </>
   );
 }
-
-export default TranslatedCodeViewer;

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
 /**
- * props
- * ─────────────────────────────────────────────────────────
- *  open      : boolean
- *  total     : number
- *  current   : number
- *  phase     : "translate" | "syntax" | "done"
- *  fileName  : string
- *  onClose   : () => void
+ * props:
+ * ───────────────────────────────────────────────
+ * open      : boolean
+ * total     : number
+ * current   : number
+ * phase     : "translate" | "syntax" | "done"
+ * fileName  : string
+ * onClose   : () => void
  */
 export default function ProgressModal({
   open,
@@ -19,16 +19,15 @@ export default function ProgressModal({
   onClose
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  /* ---------------- вычисления ---------------- */
   const percent = total ? Math.round((current / total) * 100) : 0;
-  const isDone  = phase === 'done';
+  const isDone = phase === 'done';
 
-  useEffect(() => { if (open) setConfirmOpen(false); }, [open]);
+  useEffect(() => {
+    if (open) setConfirmOpen(false);
+  }, [open]);
 
   if (!open) return null;
 
-  /* ---------------- тексты -------------------- */
   const headerText = {
     translate: 'Перевод скрипта',
     syntax:    'Проверка синтаксиса',
@@ -41,14 +40,13 @@ export default function ProgressModal({
     done:      'Скрипт переведён и проверен!'
   }[phase];
 
-  /* ---------------- события ------------------- */
   const handleCloseClick = () => {
     if (isDone) onClose();
     else        setConfirmOpen(true);
   };
 
   const handleConfirmStop = () => {
-    onClose(); // родитель закроет SSE
+    onClose(); // Закрыть модалку и остановить SSE
 
     fetch('http://localhost:9999/api/application/stop_translation', {
       method: 'POST',
@@ -60,23 +58,23 @@ export default function ProgressModal({
     );
   };
 
-  /* ---------------- JSX ----------------------- */
   return (
     <>
       {/* основная модалка */}
       <div style={styles.overlay}>
         <div style={styles.modal}>
-          <button
-            aria-label="Закрыть"
-            onClick={handleCloseClick}
-            style={styles.closeButton}
-          >
-            ×
-          </button>
+          {isDone && (
+            <button
+              aria-label="Закрыть"
+              onClick={handleCloseClick}
+              style={styles.closeButton}
+            >
+              ×
+            </button>
+          )}
 
           <h3 style={styles.header}>{headerText}</h3>
 
-          {/* полоса прогресса — всегда видна, меняет цвет/ширину */}
           <div style={styles.progressBar}>
             <div
               style={{
@@ -96,8 +94,8 @@ export default function ProgressModal({
         <div style={styles.overlay}>
           <div style={styles.confirmBox}>
             <p style={{ marginBottom: 20 }}>Вы уверены, что хотите прервать перевод?</p>
-            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
-              <button style={styles.primaryButton} onClick={()=>setConfirmOpen(false)}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button style={styles.primaryButton} onClick={() => setConfirmOpen(false)}>
                 Отмена
               </button>
               <button style={styles.secondaryButton} onClick={handleConfirmStop}>
@@ -111,7 +109,7 @@ export default function ProgressModal({
   );
 }
 
-/* ---------- inline styles -------------------- */
+/* inline styles */
 const styles = {
   overlay: {
     position: 'fixed',
@@ -142,10 +140,10 @@ const styles = {
   },
   header: {
     margin: 0,
-    fontWeight: 300   // тонкий шрифт
+    fontWeight: 300
   },
   info: {
-    fontWeight: 300   // тонкий шрифт
+    fontWeight: 300
   },
   progressBar: {
     height: 20,

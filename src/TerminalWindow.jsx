@@ -57,11 +57,15 @@ const TerminalWindow = forwardRef(({ initialLog = [] }, ref) => {
   }));
 
   return (
-    <div className="terminal-wrapper light">
-      <div className="terminal-header">Терминал логов</div>
-      <div className="terminal-body" ref={containerRef} />
-    </div>
-  );
+  <div
+    ref={containerRef}
+    style={{
+      width: '100%',
+      height: '100%',       // полностью по высоте Splitter.Panel
+      overflow: 'hidden'    
+    }}
+  />
+);
 });
 
 export default TerminalWindow;

@@ -1,151 +1,145 @@
+// src/UntranslatedCodeViewer.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
-import { FaSave, FaExpandArrowsAlt, FaListUl, FaChevronDown } from 'react-icons/fa';
+import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
 import { Drawer, message } from 'antd';
 import FileList from './FileList';
-import './Uiverse.css';
+import './Uiverse.css';  // тут лежит .uiverse-btn
 
-function UntranslatedCodeViewer({
+export default function UntranslatedCodeViewer({
   fileName,
   logToTerminal,
   onSaveSuccess,
   onSelectFile
 }) {
-  const [code, setCode] = useState('');
-  const [editedFileName, setEdited] = useState(fileName || 'Новый скрипт.txt');
-  const [isEditingName, setEditing] = useState(false);
-  const [isFullscreen, setFull] = useState(false);
-  const [drawerVisible, setDrawer] = useState(false);
-  const [refreshList, setRefresh] = useState(0);
-  const [selectedFile, setSelected] = useState(null);
-  const [isUploading, setUploading] = useState(false);
-  const [collapsed, setCollapse] = useState(false);
+  const [code, setCode]                     = useState('');
+  const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
+  const [isEditingName, setIsEditingName]   = useState(false);
+  const [isFullscreen, setIsFullscreen]     = useState(false);
+  const [drawerVisible, setDrawerVisible]   = useState(false);
+  const [refreshList, setRefreshList]       = useState(0);
+  const [selectedFile, setSelectedFile]     = useState(null);
+  const [isUploading, setIsUploading]       = useState(false);
 
   const fileInputRef = useRef(null);
-
-  
-  const [messageApi, contextHolder] = message.useMessage();
+  const [msgApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    if (!fileName) { setCode(''); return; }
-
-    fetch(`http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encodeURIComponent(fileName)}`)
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+    if (!fileName) {
+      setCode('');
+      setEditedFileName('Новый скрипт.txt');
+      return;
+    }
+    fetch(
+      `http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encodeURIComponent(
+        fileName
+      )}`,
+      { credentials: 'include' }
+    )
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
       .then(data => setCode(data.content || 'Ошибка: нет поля content'))
       .catch(() => setCode('Ошибка при загрузке скрипта'));
-
-    setEdited(fileName);
+    setEditedFileName(fileName);
   }, [fileName]);
 
   const handleSave = () => {
-    if (!editedFileName.trim()) return logToTerminal?.('Нет имени для сохранения.');
-    if (!code.trim()) return logToTerminal?.('Нельзя сохранить пустой скрипт.');
-
-    logToTerminal?.(`Сохраняем: ${editedFileName}`);
-
+    if (!editedFileName.trim()) return logToTerminal('Нет имени для сохранения.');
+    if (!code.trim()) return logToTerminal('Нельзя сохранить пустой скрипт.');
+    logToTerminal(`Сохраняем: ${editedFileName}`);
     fetch('http://localhost:9999/api/application/update_untranslated_script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ file_name: editedFileName, content: code })
     })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
-      .then(d => {
-        logToTerminal?.(`Файл "${editedFileName}" сохранён. Чтобы открыть его, воспользуйтесь архивом непереведённых скриптов.`);
-
-        
-        messageApi.open({
-          type: 'success',
-          content: `Файл "${editedFileName}" сохранён. Чтобы открыть его, воспользуйтесь архивом непереведённых скриптов.`,
-          duration: 5
-        });
-        onSaveSuccess?.();
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then(() => {
+        logToTerminal(`Файл "${editedFileName}" сохранён.`);
+        msgApi.open({ type: 'success', content: `"${editedFileName}" сохранён.`, duration: 4 });
+        onSaveSuccess();
       })
       .catch(e => {
-        logToTerminal?.(`Ошибка при сохранении: ${e}`);
-        messageApi.open({
-          type: 'error',
-          content: 'Ошибка при сохранении скрипта.',
-          duration: 5
-        });
+        logToTerminal(`Ошибка при сохранении: ${e}`);
+        msgApi.open({ type: 'error', content: 'Ошибка при сохранении скрипта.', duration: 4 });
       });
   };
 
-  const handleUpload = (e) => {
+  const handleUpload = e => {
     e.preventDefault();
-    if (!selectedFile) return logToTerminal?.('Выберите файл перед загрузкой.');
-
-    setUploading(true);
-    logToTerminal?.(`Загружаем файл: ${selectedFile.name}`);
-
+    if (!selectedFile) return logToTerminal('Выберите файл перед загрузкой.');
+    setIsUploading(true);
+    logToTerminal(`Загружаем файл: ${selectedFile.name}`);
     const fd = new FormData();
     fd.append('file', selectedFile);
-
     fetch('http://localhost:9999/api/application/upload_script', {
-      method: 'POST', credentials: 'include', body: fd
+      method: 'POST',
+      credentials: 'include',
+      body: fd
     })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
       .then(d => {
-        logToTerminal?.(d.message || 'Успешно!');
-        setSelected(null);
-        setRefresh(r => r + 1);
-        onSaveSuccess?.();
+        logToTerminal(d.message || 'Успешно!');
+        setSelectedFile(null);
+        setRefreshList(r => r + 1);
+        onSaveSuccess();
       })
-      .catch(e => logToTerminal?.(`Ошибка загрузки: ${e}`))
-      .finally(() => setUploading(false));
+      .catch(e => logToTerminal(`Ошибка загрузки: ${e}`))
+      .finally(() => setIsUploading(false));
   };
 
   return (
     <>
-      {/* Уведомления от Ant Design */}
       {contextHolder}
-
-      <div style={{
-        position: isFullscreen ? 'absolute' : 'relative',
-        top: isFullscreen ? 0 : 'auto',
-        left: isFullscreen ? 0 : 'auto',
-        width: isFullscreen ? '100vw' : '100%',
-        height: isFullscreen ? '100vh' : 'auto',
-        zIndex: isFullscreen ? 10 : 'auto',
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #ccc',
-        borderRadius: 8,
-        overflow: 'hidden'
-      }}>
-        {/* Шапка редактора */}
-        <div style={{
-          backgroundColor: '#f0f0f0',
-          color: '#222',
-          padding: '8px 12px',
+      <div
+        style={{
+          position: isFullscreen ? 'absolute' : 'relative',
+          top: isFullscreen ? 0 : 'auto',
+          left: isFullscreen ? 0 : 'auto',
+          width: isFullscreen ? '100vw' : '100%',
+          height: isFullscreen ? '100vh' : '100%',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontFamily: 'monospace',
-          fontSize: 14
-        }}>
+          flexDirection: 'column',
+          border: '1px solid #ccc',
+          background: '#1e1e1e',
+          overflow: 'hidden',
+          zIndex: isFullscreen ? 10 : 'auto'
+        }}
+      >
+        {/* Шапка */}
+        <div
+          style={{
+            background: '#f0f0f0',
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #ddd',
+            fontFamily: 'monospace',
+            fontSize: 14
+          }}
+        >
           {isEditingName ? (
             <input
               autoFocus
               value={editedFileName}
-              onChange={e => setEdited(e.target.value)}
-              onBlur={() => setEditing(false)}
-              onKeyDown={e => e.key === 'Enter' && setEditing(false)}
+              onChange={e => setEditedFileName(e.target.value)}
+              onBlur={() => setIsEditingName(false)}
+              onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
               style={{
+                flex: 1,
                 fontSize: 14,
                 background: 'transparent',
                 border: 'none',
                 borderBottom: '1px solid #222',
-                width: '100%',
-                color: '#222',
                 fontFamily: 'monospace'
               }}
             />
           ) : (
             <span
               title={editedFileName}
-              onClick={() => setEditing(true)}
+              onClick={() => setIsEditingName(true)}
               style={{
-                maxWidth: 200,
+                flex: 1,
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
@@ -156,9 +150,9 @@ function UntranslatedCodeViewer({
               {editedFileName}
             </span>
           )}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
-              onClick={() => { setRefresh(r => r + 1); setDrawer(true); }}
+              onClick={() => setDrawerVisible(true)}
               title="Архив"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
@@ -172,8 +166,8 @@ function UntranslatedCodeViewer({
               <FaSave />
             </button>
             <button
-              onClick={() => setFull(f => !f)}
-              title={isFullscreen ? 'В окно' : 'На весь экран'}
+              onClick={() => setIsFullscreen(f => !f)}
+              title={isFullscreen ? 'В окно' : 'Во весь экран'}
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <FaExpandArrowsAlt />
@@ -181,124 +175,68 @@ function UntranslatedCodeViewer({
           </div>
         </div>
 
-        {/* Редактор кода */}
-        <Editor
-          height={isFullscreen ? 'calc(100vh - 40px)' : 400}
-          language="pascal"
-          theme="vs"
-          value={code}
-          onChange={v => setCode(v || '')}
-          options={{ fontSize: 14 }}
-        />
+        {/* Monaco-editor */}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <Editor
+            height="100%"
+            language="pascal"
+            theme="vs"
+            value={code}
+            onChange={v => setCode(v || '')}
+            options={{ fontSize: 14 }}
+          />
+        </div>
 
-        {/* Выдвижной блок архива и загрузки */}
+        {/* Drawer: выбор + загрузка + список */}
         <Drawer
-          title="Выберите файл для загрузки (.txt)"
+          title="Загрузить .txt"
           placement="left"
           closable
-          onClose={() => setDrawer(false)}
+          onClose={() => setDrawerVisible(false)}
           open={drawerVisible}
           width={650}
         >
-          <button
-            onClick={() => setCollapse(!collapsed)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#1890ff',
-              cursor: 'pointer',
-              marginLeft: -5,
-              marginBottom: 20,
-              fontSize: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6
-            }}
-          >
-            <FaChevronDown
-              size={14}
-              style={{
-                transition: 'transform .3s',
-                transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)'
-              }}
-            />
-            {collapsed ? 'Развернуть меню загрузки' : 'Свернуть меню загрузки'}
-          </button>
-
-          {!collapsed && (
-            <form
-              onSubmit={handleUpload}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 12,
-                maxWidth: 600,
-                width: '100%',
-                marginBottom: 10
-              }}
+          <form onSubmit={handleUpload}>
+            <button
+              type="button"
+              className="uiverse-btn"
+              onClick={() => fileInputRef.current?.click()}
             >
-              <button
-                type="button"
-                className="uiverse-btn"
-                onClick={() => fileInputRef.current?.click()}
-                style={{ padding: '0.4em 1.4em', fontSize: 14, height: 38, minWidth: 110 }}
-              >
-                <a href="#"><span>ВЫБРАТЬ</span></a>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={e => e.target.files?.length && setSelected(e.target.files[0])}
-                  style={{ display: 'none' }}
-                />
-              </button>
+              <span>ВЫБРАТЬ</span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={e =>
+                  e.target.files?.length && setSelectedFile(e.target.files[0])
+                }
+              />
+            </button>
+            <button
+              type="submit"
+              className="uiverse-btn"
+              disabled={isUploading}
+              style={{ marginLeft: 8 }}
+            >
+              <span>ЗАГРУЗИТЬ</span>
+            </button>
+          </form>
 
-              <span
-                title={selectedFile ? selectedFile.name : 'Файл не выбран'}
-                style={{
-                  display: 'block',
-                  maxWidth: 150,
-                  fontSize: 14,
-                  color: '#555',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  textAlign: 'right'
-                }}
-              >
-                {selectedFile
-                  ? selectedFile.name.length > 30
-                    ? `${selectedFile.name.slice(0, 27)}…`
-                    : selectedFile.name
-                  : 'Файл не выбран'}
-              </span>
-
-              <button
-                type="submit"
-                className="uiverse-btn"
-                disabled={isUploading}
-                style={{ padding: '0.4em 1.4em', fontSize: 14, height: 38, minWidth: 110 }}
-              >
-                <a href="#"><span>ЗАГРУЗИТЬ</span></a>
-              </button>
-            </form>
-          )}
-
-          <hr style={{ margin: '20px 0', borderTop: '1px solid #ccc' }} />
+          <hr style={{ margin: '16px 0' }} />
 
           <FileList
             bucketName="scripts-untranslated"
             mode="untranslated"
             refreshTrigger={refreshList}
-            onSelectFile={fname => { onSelectFile?.(fname); setDrawer(false); }}
-            onDeleteSuccess={() => setRefresh(r => r + 1)}
+            onSelectFile={fname => {
+              onSelectFile(fname);
+              setDrawerVisible(false);
+            }}
+            onDeleteSuccess={() => setRefreshList(r => r + 1)}
             logToTerminal={logToTerminal}
           />
-
         </Drawer>
       </div>
     </>
   );
 }
-
-export default UntranslatedCodeViewer;
