@@ -173,6 +173,7 @@ function App() {
           style={{ height: '100%' }}
           sizes={showTerminal ? [80, 20] : [100, 0]}
           min={100}
+          onResize={() => terminalRef.current?.fit?.()}
         >
           {/* Верх: редакторы (оба collapsible!) */}
           <Splitter.Panel min={200}>
