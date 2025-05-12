@@ -4,24 +4,25 @@ import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
 import { Drawer, message } from 'antd';
 import FileList from './FileList';
-import './Uiverse.css';  // тут лежит .uiverse-btn
+import FileUploader from './FileUploader';
+import { FaChevronRight } from 'react-icons/fa';
+import './Uiverse.css';
 
 export default function UntranslatedCodeViewer({
   fileName,
   logToTerminal,
   onSaveSuccess,
-  onSelectFile
+  onSelectFile,
+  userEmail
 }) {
-  const [code, setCode]                     = useState('');
+  const [code, setCode] = useState('');
   const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
-  const [isEditingName, setIsEditingName]   = useState(false);
-  const [isFullscreen, setIsFullscreen]     = useState(false);
-  const [drawerVisible, setDrawerVisible]   = useState(false);
-  const [refreshList, setRefreshList]       = useState(0);
-  const [selectedFile, setSelectedFile]     = useState(null);
-  const [isUploading, setIsUploading]       = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [refreshList, setRefreshList] = useState(0);
+  const [isUploaderVisible, setIsUploaderVisible] = useState(true);
 
-  const fileInputRef = useRef(null);
   const [msgApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
@@ -64,29 +65,6 @@ export default function UntranslatedCodeViewer({
       });
   };
 
-  const handleUpload = e => {
-    e.preventDefault();
-    if (!selectedFile) return logToTerminal('Выберите файл перед загрузкой.');
-    setIsUploading(true);
-    logToTerminal(`Загружаем файл: ${selectedFile.name}`);
-    const fd = new FormData();
-    fd.append('file', selectedFile);
-    fetch('http://localhost:9999/api/application/upload_script', {
-      method: 'POST',
-      credentials: 'include',
-      body: fd
-    })
-      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then(d => {
-        logToTerminal(d.message || 'Успешно!');
-        setSelectedFile(null);
-        setRefreshList(r => r + 1);
-        onSaveSuccess();
-      })
-      .catch(e => logToTerminal(`Ошибка загрузки: ${e}`))
-      .finally(() => setIsUploading(false));
-  };
-
   return (
     <>
       {contextHolder}
@@ -105,7 +83,6 @@ export default function UntranslatedCodeViewer({
           zIndex: isFullscreen ? 10 : 'auto'
         }}
       >
-        {/* Шапка */}
         <div
           style={{
             background: '#f0f0f0',
@@ -175,7 +152,6 @@ export default function UntranslatedCodeViewer({
           </div>
         </div>
 
-        {/* Monaco-editor */}
         <div style={{ flex: 1, minHeight: 0 }}>
           <Editor
             height="100%"
@@ -187,42 +163,40 @@ export default function UntranslatedCodeViewer({
           />
         </div>
 
-        {/* Drawer: выбор + загрузка + список */}
         <Drawer
-          title="Загрузить .txt"
+          title="Архив непереведённых скриптов"
           placement="left"
           closable
           onClose={() => setDrawerVisible(false)}
           open={drawerVisible}
           width={650}
         >
-          <form onSubmit={handleUpload}>
-            <button
-              type="button"
-              className="uiverse-btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <span>ВЫБРАТЬ</span>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={e =>
-                  e.target.files?.length && setSelectedFile(e.target.files[0])
-                }
-              />
-            </button>
-            <button
-              type="submit"
-              className="uiverse-btn"
-              disabled={isUploading}
-              style={{ marginLeft: 8 }}
-            >
-              <span>ЗАГРУЗИТЬ</span>
-            </button>
-          </form>
+          <div
+            className="upload-toggle"
+            onClick={() => setIsUploaderVisible(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+          >
+            <FaChevronRight
+              style={{
+                transform: isUploaderVisible ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s ease'
+              }}
+            />
+            {isUploaderVisible ? 'Свернуть меню загрузки' : 'Развернуть меню загрузки'}
+          </div>
 
-          <hr style={{ margin: '16px 0' }} />
+          {isUploaderVisible && (
+            <FileUploader
+              logToTerminal={logToTerminal}
+              onUploadSuccess={() => {
+                setTimeout(() => setRefreshList(r => r + 1), 500);
+                onSaveSuccess();
+              }}
+              userEmail={userEmail}
+            />
+          )}
+
+          <hr style={{ margin: '16px 0', borderTop: '1px solid #ccc' }} />
 
           <FileList
             bucketName="scripts-untranslated"

@@ -189,6 +189,7 @@ function App() {
                     setOvrName('');
                     logToTerminal(`Выбран файл слева: ${fname}`);
                   }}
+                  userEmail={userEmail}
                 />
               </Splitter.Panel>
               <Splitter.Panel min="20%" collapsible>
@@ -207,7 +208,7 @@ function App() {
             </Splitter>
           </Splitter.Panel>
 
-          {/* Низ: терминал (не collapsible, min=200) */}
+          {/* Низ: термина */}
           {showTerminal && (
             <Splitter.Panel min={200} max={400}>
               <div className="terminal-body-only">

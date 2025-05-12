@@ -24,19 +24,16 @@ function FileList({
 
   /* ---------- загрузка списка ---------- */
   useEffect(() => {
-    fetch(
-      `http://localhost:9999/api/application/list_files?bucket_name=${encodeURIComponent(
-        bucketName
-      )}`,
-      { credentials: "include" }
-    )
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((data) => setFiles(data.files || []))
-      .catch((err) => {
-        console.error("Ошибка при загрузке файлов:", err);
-        setFiles([]);
-      });
-  }, [bucketName, refreshTrigger]);
+  const url = `http://localhost:9999/api/application/list_files?bucket_name=${encodeURIComponent(bucketName)}&_=${Date.now()}`;
+  fetch(url, { credentials: "include" })
+    .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+    .then((data) => setFiles(data.files || []))
+    .catch((err) => {
+      console.error("Ошибка при загрузке файлов:", err);
+      setFiles([]);
+    });
+}, [bucketName, refreshTrigger]);
+
 
   /* ---------- helpers ---------- */
   const parseFileInfo = (filename) => {

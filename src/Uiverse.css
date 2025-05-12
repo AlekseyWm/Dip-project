@@ -44,7 +44,34 @@
   transition: 100ms;
 }
  
+/* Заголовок архива */
+.archive-header {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 16px 0 10px;
+  font-family: 'Proxima Nova', sans-serif;
+  color: #222;
+}
 
+/* Подсветка строк таблицы при наведении */
+.file-table-row:hover {
+  background-color: #f9f9f9;
+  transition: background-color 0.25s ease;
+}
+
+/* Кнопка сворачивания / разворачивания */
+.upload-toggle {
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: inline-block;
+  font-family: 'Proxima Nova', sans-serif;
+}
+
+.upload-toggle:hover {
+  text-decoration: underline;
+}
 
 
 

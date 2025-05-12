@@ -1,15 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-/**
- * props:
- * ───────────────────────────────────────────────
- * open      : boolean
- * total     : number
- * current   : number
- * phase     : "translate" | "syntax" | "done"
- * fileName  : string
- * onClose   : () => void
- */
 export default function ProgressModal({
   open,
   total,
