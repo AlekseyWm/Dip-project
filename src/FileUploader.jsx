@@ -1,51 +1,52 @@
 import React, { useState } from 'react';
+import { Upload, Button } from 'antd';
+import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
+import './Uiverse.css';
+
+const { Dragger } = Upload;
 
 function FileUploader({ logToTerminal, onUploadSuccess, userEmail }) {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
+  const handleCustomRequest = ({ file, onSuccess }) => {
+    // не отправляем на сервер, сохраняем в state
+    setTimeout(() => {
+      onSuccess("ok");
+    }, 0);
   };
 
-  const handleUpload = (e) => {
-    e.preventDefault();
-
-    // Проверка файла
-    if (!selectedFile) {
+  const handleUploadClick = () => {
+    const file = fileList[0];
+    if (!file) {
       logToTerminal && logToTerminal('Выберите файл перед загрузкой.');
       return;
     }
 
-    // Проверка авторизации
     if (!userEmail) {
       logToTerminal && logToTerminal('Вы не авторизованы. Загрузка невозможна.');
       return;
     }
 
-    setIsUploading(true);
-    logToTerminal && logToTerminal(`Начинается загрузка файла: ${selectedFile.name}`);
-
     const formData = new FormData();
-    formData.append('file', selectedFile);
+    formData.append('file', file.originFileObj);
+
+    setIsUploading(true);
+    logToTerminal && logToTerminal(`Начинается загрузка файла: ${file.name}`);
 
     fetch('http://localhost:9999/api/application/upload_script', {
       method: 'POST',
       credentials: 'include',
-      body: formData
+      body: formData,
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Ошибка HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
         return response.json();
       })
       .then((data) => {
         logToTerminal && logToTerminal(data.message || 'Файл успешно загружен!');
         onUploadSuccess && onUploadSuccess();
-        setSelectedFile(null);
+        setFileList([]);
       })
       .catch((error) => {
         logToTerminal && logToTerminal(`Ошибка при загрузке файла: ${error.message}`);
@@ -56,55 +57,65 @@ function FileUploader({ logToTerminal, onUploadSuccess, userEmail }) {
   };
 
   return (
-    <form
-      onSubmit={handleUpload}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-    >
-      <label
+    <div style={{ marginBottom: '16px' }}>
+
+      <Dragger
+        accept=".txt,.py"
+        multiple={false}
+        showUploadList={true}
+        customRequest={handleCustomRequest}
+        fileList={fileList}
+        onChange={({ fileList }) => setFileList(fileList.slice(-1))}
+        itemRender={(originNode, file) => (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#fff',
+            padding: '6px 10px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            marginTop: '8px'
+          }}>
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '200px'
+              }}
+            >
+              {file.name}
+            </span>
+            <Button
+              icon={<UploadOutlined />}
+              size="small"
+              onClick={handleUploadClick}
+              loading={isUploading}
+              style={{
+                marginLeft: 10,
+                border: 'none',
+                background: 'transparent',
+                color: '#198754'
+              }}
+            />
+          </div>
+        )}
         style={{
-          minWidth: '100px',
-          height: '21px',
-          border: '1px solid #198754',
-          color: '#198754',
-          backgroundColor: 'transparent',
-          padding: '6px 14px',
+          background: '#fafafa',
           borderRadius: '6px',
-          cursor: 'pointer',
-          fontFamily: 'Proxima Nova, sans-serif',
-          fontWeight: 500,
-          fontSize: '14px',
+          padding: '12px 0'
         }}
       >
-        Выберите файл
-        <input
-          type="file"
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-        />
-      </label>
-      <span style={{ fontFamily: 'Proxima Nova, sans-serif', fontSize: '14px' }}>
-        {selectedFile ? selectedFile.name : 'Файл не выбран'}
-      </span>
-      <button
-        type="submit"
-        disabled={isUploading}
-        style={{
-          minWidth: '120px',
-          height: '35px',
-          border: '1px solid #198754',
-          color: '#198754',
-          backgroundColor: 'transparent',
-          padding: '6px 14px',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontFamily: 'Proxima Nova, sans-serif',
-          fontWeight: 500,
-          fontSize: '14px',
-        }}
-      >
-        {isUploading ? 'Загрузка...' : 'Загрузить'}
-      </button>
-    </form>
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-text" style={{ margin: 0 }}>Нажмите или перетащите файл в эту область</p>
+        <p className="ant-upload-hint" style={{ fontSize: '12px', color: '#999' }}>
+          Поддерживается один .txt или .py файл
+        </p>
+      </Dragger>
+    </div>
   );
 }
 

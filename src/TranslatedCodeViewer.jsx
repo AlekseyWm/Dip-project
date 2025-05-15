@@ -141,7 +141,7 @@ export default function TranslatedCodeViewer({
           closable
           onClose={()=>setDrawer(false)}
           open={drawerVisible}
-          width={650}
+          width={750}
         >
           <FileList
             bucketName="scripts-translated"
