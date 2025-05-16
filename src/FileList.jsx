@@ -27,21 +27,23 @@ function FileList({
   }, [bucketName, refreshTrigger]);
 
   const parseFileInfo = (filename) => {
-    const longPyMatch = filename.match(/^(.*?) - (.*?) \((.*?)\) - .*? \((.*?)\)\.py$/);
-    if (longPyMatch) {
-      return {
-        title: longPyMatch[1].trim(),
-        user: longPyMatch[2].trim(),
-        date: longPyMatch[3].trim()
-      };
+    if (mode === 'translated') {
+      const match = filename.match(/^(.*?) - ([^(]+) \(([^)]+)\)\.py$/);
+      if (match) {
+        return {
+          title: match[1].trim(),
+          user: match[2].trim(),
+          date: match[3].trim()
+        };
+      }
     }
 
-    const shortMatch = filename.match(/^(.*?) - (.*?) \((.*?)\)\.(txt|py)$/);
-    if (shortMatch) {
+    const matchTxt = filename.match(/^(.*?) - ([^(]+) \(([^)]+)\)\.(txt|py)$/);
+    if (matchTxt) {
       return {
-        title: shortMatch[1].trim(),
-        user: shortMatch[2].trim(),
-        date: shortMatch[3].trim()
+        title: matchTxt[1].trim(),
+        user: matchTxt[2].trim(),
+        date: matchTxt[3].trim()
       };
     }
 

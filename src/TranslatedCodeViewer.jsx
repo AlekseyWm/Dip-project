@@ -21,9 +21,16 @@ export default function TranslatedCodeViewer({
   const [refreshTrigger, setRefresh]  = useState(0);
   const [msgApi, contextHolder]       = message.useMessage();
 
+  const ensurePyExtension = (name) => name.endsWith('.py') ? name : `${name}.py`;
+
+  const cleanFileName = (name) =>
+    name
+      .replace(/^Имя\s?\d*\s?файл[а-я]*\s*-\s*/i, '')
+      .replace(/ - [^()]+ \([^)]+\)(?=\.py$)/, '');
+
   useEffect(() => {
     if (overrideCode) {
-      const name = overrideFileName || 'Новый файл.py';
+      const name = ensurePyExtension(overrideFileName || 'Новый файл.py');
       setName(name);
       setCode(overrideCode);
       return;
@@ -33,104 +40,124 @@ export default function TranslatedCodeViewer({
       setCode('');
       return;
     }
+
     fetch(`http://localhost:9999/api/application/get_translated_script_content?file_name=${encodeURIComponent(fileName)}`, {
       credentials:'include'
     })
-      .then(r=>r.ok?r.json():Promise.reject(r.status))
-      .then(d=>{
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(d => {
         setName(fileName);
-        setCode(d.content||'Нет поля content');
+        setCode(d.content || 'Нет поля content');
       })
-      .catch(()=>setCode('Ошибка при загрузке'));
+      .catch(() => setCode('// Ошибка при загрузке скрипта'));
   }, [fileName, overrideCode, overrideFileName]);
 
   const handleSave = () => {
-    if (!code.trim())     return logToTerminal('Пустой скрипт нельзя сохранить.');
+    if (!code.trim()) return logToTerminal('Пустой скрипт нельзя сохранить.');
     if (!editedFileName.trim()) return logToTerminal('Нет имени файла.');
     logToTerminal(`Сохраняем .py: ${editedFileName}`);
+
     fetch('http://localhost:9999/api/application/update_translated_script', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       credentials:'include',
-      body:JSON.stringify({file_name:editedFileName, code})
+      body: JSON.stringify({ file_name: editedFileName, code })
     })
-      .then(r=>r.ok?r.json():Promise.reject(r.status))
-      .then(()=>{
-        msgApi.open({type:'success', content:`"${editedFileName}" сохранён.`, duration:4});
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(() => {
+        msgApi.open({ type: 'success', content: `"${editedFileName}" сохранён.`, duration: 4 });
+        logToTerminal?.(`Файл "${editedFileName}" сохранён. Откройте его в архиве справа.`);
         onSaveSuccess();
       })
-      .catch(e=>{
+      .catch(e => {
         logToTerminal(`Ошибка сохранения: ${e}`);
-        msgApi.open({type:'error', content:'Ошибка при сохранении', duration:4});
+        msgApi.open({ type: 'error', content: 'Ошибка при сохранении', duration: 4 });
       });
+  };
+
+  const fileHeaderStyle = {
+    flex: 1,
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    cursor: 'text',
+    fontWeight: 'bold',
+    fontFamily: '"Proxima Nova", sans-serif',
+    fontSize: 14,
+    color: '#000'
   };
 
   return (
     <>
       {contextHolder}
       <div style={{
-        position: isFullscreen?'fixed':'relative',
-        top: isFullscreen?0:'auto',
-        left: isFullscreen?0:'auto',
-        width: isFullscreen?'100vw':'100%',
-        height: isFullscreen?'100vh':'100%',
-        zIndex: isFullscreen?10:'auto',
-        display:'flex', flexDirection:'column',
-        border:'1px solid #ccc', background:'#1e1e1e', overflow:'hidden'
+        position: isFullscreen ? 'fixed' : 'relative',
+        top: isFullscreen ? 0 : 'auto',
+        left: isFullscreen ? 0 : 'auto',
+        width: isFullscreen ? '100vw' : '100%',
+        height: isFullscreen ? '100vh' : '100%',
+        zIndex: isFullscreen ? 10 : 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid #ccc',
+        background: '#1e1e1e',
+        overflow: 'hidden'
       }}>
         {/* Шапка */}
         <div style={{
-          background:'#f0f0f0', color:'#222',
-          padding:'8px 12px', display:'flex',
-          alignItems:'center', justifyContent:'space-between',
-          borderBottom:'1px solid #ddd'
+          background: '#f0f0f0', color: '#222',
+          padding: '8px 12px', display: 'flex',
+          alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid #ddd'
         }}>
           {isEditingName
             ? <input
                 autoFocus
                 value={editedFileName}
-                onChange={e=>setName(e.target.value)}
-                onBlur={()=>setEditing(false)}
-                onKeyDown={e=>e.key==='Enter'&&setEditing(false)}
+                onChange={e => setName(e.target.value)}
+                onBlur={() => setEditing(false)}
+                onKeyDown={e => e.key === 'Enter' && setEditing(false)}
                 style={{
-                  flex:1, background:'transparent', border:'none',
-                  borderBottom:'1px solid #222', fontFamily:'monospace'
+                  ...fileHeaderStyle,
+                  background: 'transparent', border: 'none',
+                  borderBottom: '1px solid #222'
                 }}
               />
             : <span
-                onClick={()=>setEditing(true)}
+                onClick={() => setEditing(true)}
                 title={editedFileName}
-                style={{
-                  flex:1, cursor:'text',
-                  overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                  fontWeight:'bold'
-                }}
+                style={fileHeaderStyle}
               >
-                {editedFileName || 'Переведённый скрипт.py'}
+                {cleanFileName(editedFileName) || 'Переведённый скрипт.py'}
               </span>
           }
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={()=>{ setRefresh(r=>r+1); setDrawer(true) }} style={{border:'none',background:'none'}}>
-              <FaListUl/>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setRefresh(r => r + 1); setDrawer(true) }} style={{ border: 'none', background: 'none' }}>
+              <FaListUl />
             </button>
-            <button onClick={handleSave} style={{border:'none',background:'none'}}>
-              <FaSave/>
+            <button onClick={handleSave} style={{ border: 'none', background: 'none' }}>
+              <FaSave />
             </button>
-            <button onClick={()=>setFullscreen(f=>!f)} style={{border:'none',background:'none'}}>
-              <FaExpandArrowsAlt/>
+            <button onClick={() => setFullscreen(f => !f)} style={{ border: 'none', background: 'none' }}>
+              <FaExpandArrowsAlt />
             </button>
           </div>
         </div>
 
         {/* Monaco */}
-        <div style={{ flex:1, minHeight:0 }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
           <Editor
             height="100%"
             language="python"
             theme="vs"
             value={code}
-            onChange={v=>setCode(v||'')}
-            options={{ fontSize:14 }}
+            onChange={v => setCode(v || '')}
+            options={{
+              fontSize: 14,
+              fontFamily: '"Proxima Nova", sans-serif',
+              fontWeight: 'normal',
+              fontLigatures: false
+            }}
           />
         </div>
 
@@ -139,7 +166,7 @@ export default function TranslatedCodeViewer({
           title="Архив переведённых скриптов"
           placement="right"
           closable
-          onClose={()=>setDrawer(false)}
+          onClose={() => setDrawer(false)}
           open={drawerVisible}
           width={750}
         >
@@ -147,8 +174,8 @@ export default function TranslatedCodeViewer({
             bucketName="scripts-translated"
             mode="translated"
             refreshTrigger={refreshTrigger}
-            onSelectFile={fname => { onSelectFile(fname); setDrawer(false) }}
-            onDeleteSuccess={()=>setRefresh(r=>r+1)}
+            onSelectFile={fname => { onSelectFile(fname); setDrawer(false); }}
+            onDeleteSuccess={() => setRefresh(r => r + 1)}
             logToTerminal={logToTerminal}
           />
         </Drawer>

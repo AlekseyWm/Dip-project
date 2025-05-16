@@ -1,3 +1,4 @@
+// src/UntranslatedCodeViewer.jsx
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { Drawer, message } from 'antd';
@@ -22,54 +23,90 @@ export default function UntranslatedCodeViewer({
   const [isUploaderVisible, setIsUploaderVisible] = useState(true);
   const [msgApi, contextHolder] = message.useMessage();
 
+  const ensureTxtExtension = (name) => name.endsWith('.txt') ? name : `${name}.txt`;
+
+  const cleanFileName = (name) =>
+    name
+      .replace(/^Имя\s?\d*\s?файл[а-я]*\s*-\s*/i, '')
+      .replace(/ - [^()]+ \([^)]+\)(?=\.txt$)/, '');
+
   useEffect(() => {
     if (!fileName) {
-      setCode('');
+      setCode('// Откройте файл из меню слева, чтобы начать работу.');
       setEditedFileName('Новый скрипт.txt');
       return;
     }
-    fetch(`http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encodeURIComponent(fileName)}`, {
+
+    const finalName = ensureTxtExtension(fileName);
+    const encoded = encodeURIComponent(finalName);
+
+    console.log('📥 Загружаем файл:', finalName);
+
+    fetch(`http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encoded}`, {
       credentials: 'include'
     })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
-      .then(data => setCode(data.content || 'Ошибка: нет поля content'))
-      .catch(() => setCode('Ошибка при загрузке скрипта'));
-    setEditedFileName(fileName);
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Ошибка загрузки скрипта:', res.status, text);
+          throw new Error(`Ошибка загрузки скрипта: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => setCode(data.content || '// ⚠️ Файл пуст или повреждён.'))
+      .catch(err => {
+        console.error('❌ Ошибка при загрузке скрипта:', err.message);
+        setCode('// ⚠️ Не удалось загрузить скрипт.\n// Откройте нужный файл в архиве слева.');
+      });
+
+    setEditedFileName(finalName);
   }, [fileName]);
 
   const handleSave = () => {
-  if (!editedFileName.trim()) {
-    logToTerminal?.('Нет имени для сохранения.');
-    return;
-  }
-  if (!code.trim()) {
-    logToTerminal?.('Нельзя сохранить пустой скрипт.');
-    return;
-  }
+    const safeFileName = ensureTxtExtension(editedFileName);
 
-  logToTerminal?.(`Сохраняем: ${editedFileName}`);
+    if (!safeFileName.trim()) {
+      logToTerminal?.('Нет имени для сохранения.');
+      return;
+    }
+    if (!code.trim()) {
+      logToTerminal?.('Нельзя сохранить пустой скрипт.');
+      return;
+    }
 
-  fetch('http://localhost:9999/api/application/update_untranslated_script', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ file_name: editedFileName, content: code })
-  })
-    .then(res => res.ok ? res.json() : Promise.reject(res.status))
-    .then(() => {
-      msgApi.success({ content: `"${editedFileName}" сохранён.`, duration: 3 });
-      logToTerminal?.(`Файл "${editedFileName}" сохранён.`);
+    logToTerminal?.(`Сохраняем: ${safeFileName}`);
 
-      onSaveSuccess?.();                     // сигнал успешного сохранения
-      onSelectFile?.(editedFileName);        
-      setRefreshList(r => r + 1);            // обновим список файлов
+    fetch('http://localhost:9999/api/application/update_untranslated_script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ file_name: safeFileName, content: code })
     })
-    .catch(e => {
-      msgApi.error({ content: 'Ошибка при сохранении скрипта.', duration: 4 });
-      logToTerminal?.(`Ошибка при сохранении: ${e}`);
-    });
-};
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(() => {
+        msgApi.success({ content: `"${safeFileName}" сохранён.`, duration: 3 });
+        logToTerminal?.(`Файл "${safeFileName}" сохранён. Откройте его в боковом меню для просмотра.`);
+        onSaveSuccess?.();
+        onSelectFile?.(safeFileName);
+        setRefreshList(r => r + 1);
+      })
+      .catch(e => {
+        msgApi.error({ content: 'Ошибка при сохранении скрипта.', duration: 4 });
+        logToTerminal?.(`Ошибка при сохранении: ${e}`);
+      });
+  };
 
+  const fileHeaderStyle = {
+    flex: 1,
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    cursor: 'text',
+    fontWeight: 'bold',
+    fontFamily: '"Proxima Nova", sans-serif',
+    fontSize: 14,
+    color: '#000'
+  };
 
   return (
     <>
@@ -93,9 +130,7 @@ export default function UntranslatedCodeViewer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid #ddd',
-          fontFamily: 'monospace',
-          fontSize: 14
+          borderBottom: '1px solid #ddd'
         }}>
           {isEditingName ? (
             <input
@@ -105,28 +140,19 @@ export default function UntranslatedCodeViewer({
               onBlur={() => setIsEditingName(false)}
               onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
               style={{
-                flex: 1,
-                fontSize: 14,
+                ...fileHeaderStyle,
                 background: 'transparent',
                 border: 'none',
-                borderBottom: '1px solid #222',
-                fontFamily: 'monospace'
+                borderBottom: '1px solid #222'
               }}
             />
           ) : (
             <span
               title={editedFileName}
               onClick={() => setIsEditingName(true)}
-              style={{
-                flex: 1,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                cursor: 'text',
-                fontWeight: 'bold'
-              }}
+              style={fileHeaderStyle}
             >
-              {editedFileName}
+              {cleanFileName(editedFileName)}
             </span>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
@@ -149,7 +175,12 @@ export default function UntranslatedCodeViewer({
             theme="vs"
             value={code}
             onChange={v => setCode(v || '')}
-            options={{ fontSize: 14 }}
+            options={{
+              fontSize: 14,
+              fontFamily: '"Proxima Nova", sans-serif',
+              fontWeight: 'normal',
+              fontLigatures: false
+            }}
           />
         </div>
 
@@ -177,7 +208,8 @@ export default function UntranslatedCodeViewer({
             <FileUploader
               logToTerminal={logToTerminal}
               onUploadSuccess={(uploadedName) => {
-                onSelectFile(uploadedName);
+                const safeName = ensureTxtExtension(uploadedName);
+                onSelectFile(safeName);
                 setRefreshList(r => r + 1);
               }}
               userEmail={userEmail}
@@ -191,7 +223,8 @@ export default function UntranslatedCodeViewer({
             mode="untranslated"
             refreshTrigger={refreshList}
             onSelectFile={fname => {
-              onSelectFile(fname);
+              const safeName = ensureTxtExtension(fname);
+              onSelectFile(safeName);
               setDrawerVisible(false);
             }}
             onDeleteSuccess={() => setRefreshList(r => r + 1)}

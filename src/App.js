@@ -10,42 +10,35 @@ import ProgressModal from './ProgressModal';
 import './App.css';
 
 function App() {
-  // Refs для терминала и SSE
   const terminalRef = useRef(null);
-  const esRef      = useRef(null);
-  const totalRef   = useRef(0);
+  const esRef = useRef(null);
+  const totalRef = useRef(0);
 
-  // Auth
-  const [authChecked, setAuthChecked]     = useState(false);
-  const [userEmail,    setUserEmail]      = useState('');
-  const [userFullName, setUserFullName]   = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userFullName, setUserFullName] = useState('');
 
-  // Файлы
-  const [selectedFileLeft,  setFileLeft]   = useState('');
-  const [selectedFileRight, setFileRight]  = useState('');
-  const [overrideCode,      setOvrCode]    = useState('');
-  const [overrideFileName,  setOvrName]    = useState('');
-  const [refreshLeft,       setRefreshLeft]= useState(0);
-  const [refreshRight,      setRefreshRight]= useState(0);
+  const [selectedFileLeft, setFileLeft] = useState('');
+  const [selectedFileRight, setFileRight] = useState('');
+  const [overrideCode, setOvrCode] = useState('');
+  const [overrideFileName, setOvrName] = useState('');
+  const [refreshLeft, setRefreshLeft] = useState(0);
+  const [refreshRight, setRefreshRight] = useState(0);
 
-  // Терминал
-  const [terminalLog,  setTerminalLog]  = useState([]);
+  const [terminalLog, setTerminalLog] = useState([]);
   const [showTerminal, setShowTerminal] = useState(true);
 
-  // Интерпретация
-  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
-  const [progTotal,    setProgTotal]    = useState(0);
-  const [progCurrent,  setProgCurrent]  = useState(0);
-  const [progPhase,    setProgPhase]    = useState('translate');
+  const [progTotal, setProgTotal] = useState(0);
+  const [progCurrent, setProgCurrent] = useState(0);
+  const [progPhase, setProgPhase] = useState('translate');
 
-  // Функция логирования
   const logToTerminal = (msg) => {
     setTerminalLog(prev => [...prev, msg]);
     terminalRef.current?.writeln(msg);
   };
 
-  // Проверка сессии
   useEffect(() => {
     fetch('http://localhost:9999/api/user/current', { credentials: 'include' })
       .then(r => r.ok ? r.json() : Promise.reject())
@@ -58,25 +51,39 @@ function App() {
       .finally(() => setAuthChecked(true));
   }, []);
 
-  // Logout
   const handleLogout = () => {
-    fetch('http://localhost:9999/api/auth/jwt/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
-      .then(r => {
-        if (r.ok) {
-          setUserEmail('');
-          setUserFullName('');
-          logToTerminal('Вы вышли из аккаунта.');
-        } else {
-          logToTerminal('Ошибка выхода.');
-        }
-      })
-      .catch(err => logToTerminal('Ошибка выхода: ' + err));
+    Modal.confirm({
+      title: 'Выход из системы',
+      content: 'Вы действительно хотите выйти? Несохранённые данные будут потеряны.',
+      okText: 'Выйти',
+      cancelText: 'Отмена',
+      onOk: () => {
+        fetch('http://localhost:9999/api/auth/jwt/logout', {
+          method: 'POST',
+          credentials: 'include'
+        })
+          .then(r => {
+            if (r.ok) {
+              setUserEmail('');
+              setUserFullName('');
+              setFileLeft('');
+              setFileRight('');
+              setOvrCode('');
+              setOvrName('');
+              setRefreshLeft(0);
+              setRefreshRight(0);
+              setTerminalLog([]);
+              terminalRef.current?.clear();
+              logToTerminal('Вы вышли из аккаунта.');
+            } else {
+              logToTerminal('Ошибка выхода.');
+            }
+          })
+          .catch(err => logToTerminal('Ошибка выхода: ' + err));
+      }
+    });
   };
 
-  // Кнопка "Интерпретировать"
   const handleTranslate = () => {
     if (!selectedFileLeft) {
       logToTerminal('Не выбран файл слева для интерпретации.');
@@ -85,7 +92,6 @@ function App() {
     setShowConfirm(true);
   };
 
-  // Запуск SSE-интерпретации
   const startInterpretation = () => {
     setShowConfirm(false);
     if (esRef.current) esRef.current.close();
@@ -139,10 +145,8 @@ function App() {
     };
   };
 
-  // Если авторизация не проверена
   if (!authChecked) return <div>Проверка авторизации...</div>;
 
-  // Если не залогинены — показываем Login
   if (!userEmail) {
     return (
       <Login onLogin={({ email, fullName }) => {
@@ -157,7 +161,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* Header */}
       <Header
         userEmail={userEmail}
         userFullName={userFullName}
@@ -166,7 +169,6 @@ function App() {
         onToggleTerminal={() => setShowTerminal(v => !v)}
       />
 
-      {/* Основной Splitter */}
       <div className="split">
         <Splitter
           layout="vertical"
@@ -175,14 +177,13 @@ function App() {
           min={100}
           onResize={() => terminalRef.current?.fit?.()}
         >
-          {/* Верх: редакторы (оба collapsible!) */}
           <Splitter.Panel min={200}>
             <Splitter style={{ height: '100%' }}>
               <Splitter.Panel min="20%" collapsible>
                 <UntranslatedCodeViewer
                   fileName={selectedFileLeft}
                   logToTerminal={logToTerminal}
-                  onSaveSuccess={() => setRefreshLeft(n => n+1)}
+                  onSaveSuccess={() => setRefreshLeft(n => n + 1)}
                   onSelectFile={fname => {
                     setFileLeft(fname);
                     setOvrCode('');
@@ -198,7 +199,7 @@ function App() {
                   overrideCode={overrideCode}
                   overrideFileName={overrideFileName}
                   logToTerminal={logToTerminal}
-                  onSaveSuccess={() => setRefreshRight(n => n+1)}
+                  onSaveSuccess={() => setRefreshRight(n => n + 1)}
                   onSelectFile={fname => {
                     setFileRight(fname);
                     logToTerminal(`Выбран файл справа: ${fname}`);
@@ -208,7 +209,6 @@ function App() {
             </Splitter>
           </Splitter.Panel>
 
-          {/* Низ: термина */}
           {showTerminal && (
             <Splitter.Panel min={200} max={400}>
               <div className="terminal-body-only">
@@ -219,7 +219,6 @@ function App() {
         </Splitter>
       </div>
 
-      {/* Подтверждение */}
       <Modal
         title="Подтверждение"
         open={showConfirm}
@@ -231,7 +230,6 @@ function App() {
         <p>Процесс интерпретации нельзя будет остановить. Продолжить?</p>
       </Modal>
 
-      {/* Прогресс */}
       <ProgressModal
         open={showProgress}
         total={progTotal}
