@@ -52,36 +52,28 @@ function App() {
   }, []);
 
   const handleLogout = () => {
-    Modal.confirm({
-      title: 'Выход из системы',
-      content: 'Вы действительно хотите выйти? Несохранённые данные будут потеряны.',
-      okText: 'Выйти',
-      cancelText: 'Отмена',
-      onOk: () => {
-        fetch('http://localhost:9999/api/auth/jwt/logout', {
-          method: 'POST',
-          credentials: 'include'
-        })
-          .then(r => {
-            if (r.ok) {
-              setUserEmail('');
-              setUserFullName('');
-              setFileLeft('');
-              setFileRight('');
-              setOvrCode('');
-              setOvrName('');
-              setRefreshLeft(0);
-              setRefreshRight(0);
-              setTerminalLog([]);
-              terminalRef.current?.clear();
-              logToTerminal('Вы вышли из аккаунта.');
-            } else {
-              logToTerminal('Ошибка выхода.');
-            }
-          })
-          .catch(err => logToTerminal('Ошибка выхода: ' + err));
-      }
-    });
+    fetch('http://localhost:9999/api/auth/jwt/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+      .then(r => {
+        if (r.ok) {
+          setUserEmail('');
+          setUserFullName('');
+          setFileLeft('');
+          setFileRight('');
+          setOvrCode('');
+          setOvrName('');
+          setRefreshLeft(0);
+          setRefreshRight(0);
+          setTerminalLog([]);
+          terminalRef.current?.clear();
+          logToTerminal('Вы вышли из аккаунта.');
+        } else {
+          logToTerminal('Ошибка выхода.');
+        }
+      })
+      .catch(err => logToTerminal('Ошибка выхода: ' + err));
   };
 
   const handleTranslate = () => {
@@ -129,7 +121,7 @@ function App() {
         const result = chunks.join('\n\n');
         setOvrCode(result);
         const base = selectedFileLeft.replace(/\.[^.]+$/, '');
-        const now = new Date().toISOString().slice(0,19).replace('T',' ');
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         setOvrName(`${base} - ${userEmail} (${now}).py`);
         es.close();
         esRef.current = null;

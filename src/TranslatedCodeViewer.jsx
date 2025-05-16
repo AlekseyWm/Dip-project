@@ -1,4 +1,3 @@
-// src/TranslatedCodeViewer.jsx
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
@@ -13,13 +12,13 @@ export default function TranslatedCodeViewer({
   onSaveSuccess,
   onSelectFile
 }) {
-  const [code, setCode]               = useState('');
-  const [editedFileName, setName]     = useState('');
-  const [isEditingName, setEditing]   = useState(false);
+  const [code, setCode] = useState('');
+  const [editedFileName, setName] = useState('');
+  const [isEditingName, setEditing] = useState(false);
   const [isFullscreen, setFullscreen] = useState(false);
-  const [drawerVisible, setDrawer]    = useState(false);
-  const [refreshTrigger, setRefresh]  = useState(0);
-  const [msgApi, contextHolder]       = message.useMessage();
+  const [drawerVisible, setDrawer] = useState(false);
+  const [refreshTrigger, setRefresh] = useState(0);
+  const [msgApi, contextHolder] = message.useMessage();
 
   const ensurePyExtension = (name) => name.endsWith('.py') ? name : `${name}.py`;
 
@@ -42,7 +41,7 @@ export default function TranslatedCodeViewer({
     }
 
     fetch(`http://localhost:9999/api/application/get_translated_script_content?file_name=${encodeURIComponent(fileName)}`, {
-      credentials:'include'
+      credentials: 'include'
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => {
@@ -55,12 +54,13 @@ export default function TranslatedCodeViewer({
   const handleSave = () => {
     if (!code.trim()) return logToTerminal('Пустой скрипт нельзя сохранить.');
     if (!editedFileName.trim()) return logToTerminal('Нет имени файла.');
+
     logToTerminal(`Сохраняем .py: ${editedFileName}`);
 
     fetch('http://localhost:9999/api/application/update_translated_script', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ file_name: editedFileName, code })
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -110,29 +110,30 @@ export default function TranslatedCodeViewer({
           alignItems: 'center', justifyContent: 'space-between',
           borderBottom: '1px solid #ddd'
         }}>
-          {isEditingName
-            ? <input
-                autoFocus
-                value={editedFileName}
-                onChange={e => setName(e.target.value)}
-                onBlur={() => setEditing(false)}
-                onKeyDown={e => e.key === 'Enter' && setEditing(false)}
-                style={{
-                  ...fileHeaderStyle,
-                  background: 'transparent', border: 'none',
-                  borderBottom: '1px solid #222'
-                }}
-              />
-            : <span
-                onClick={() => setEditing(true)}
-                title={editedFileName}
-                style={fileHeaderStyle}
-              >
-                {cleanFileName(editedFileName) || 'Переведённый скрипт.py'}
-              </span>
-          }
+          {isEditingName ? (
+            <input
+              autoFocus
+              value={editedFileName}
+              onChange={e => setName(e.target.value)}
+              onBlur={() => setEditing(false)}
+              onKeyDown={e => e.key === 'Enter' && setEditing(false)}
+              style={{
+                ...fileHeaderStyle,
+                background: 'transparent', border: 'none',
+                borderBottom: '1px solid #222'
+              }}
+            />
+          ) : (
+            <span
+              onClick={() => setEditing(true)}
+              title={editedFileName}
+              style={fileHeaderStyle}
+            >
+              {cleanFileName(editedFileName) || 'Переведённый скрипт.py'}
+            </span>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setRefresh(r => r + 1); setDrawer(true) }} style={{ border: 'none', background: 'none' }}>
+            <button onClick={() => { setRefresh(r => r + 1); setDrawer(true); }} style={{ border: 'none', background: 'none' }}>
               <FaListUl />
             </button>
             <button onClick={handleSave} style={{ border: 'none', background: 'none' }}>
@@ -144,7 +145,7 @@ export default function TranslatedCodeViewer({
           </div>
         </div>
 
-        {/* Monaco */}
+        {/* Monaco Editor */}
         <div style={{ flex: 1, minHeight: 0 }}>
           <Editor
             height="100%"
@@ -161,7 +162,7 @@ export default function TranslatedCodeViewer({
           />
         </div>
 
-        {/* Drawer */}
+        {/* Боковое меню */}
         <Drawer
           title="Архив переведённых скриптов"
           placement="right"
@@ -174,7 +175,11 @@ export default function TranslatedCodeViewer({
             bucketName="scripts-translated"
             mode="translated"
             refreshTrigger={refreshTrigger}
-            onSelectFile={fname => { onSelectFile(fname); setDrawer(false); }}
+            currentFileName={fileName}
+            onSelectFile={fname => {
+              onSelectFile(fname);
+              setDrawer(false);
+            }}
             onDeleteSuccess={() => setRefresh(r => r + 1)}
             logToTerminal={logToTerminal}
           />

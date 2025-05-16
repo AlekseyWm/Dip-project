@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaDownload, FaTrash } from 'react-icons/fa';
-import { message } from 'antd';
+import { message, Input, Modal } from 'antd';
 
 function FileList({
   bucketName,
@@ -8,11 +8,13 @@ function FileList({
   refreshTrigger = 0,
   onDeleteSuccess,
   logToTerminal,
-  mode = 'translated' // 'translated' | 'untranslated'
+  mode = 'translated',
+  currentFileName = ''
 }) {
   const [files, setFiles] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [messageApi, contextHolder] = message.useMessage();
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetch(`http://localhost:9999/api/application/list_files?bucket_name=${bucketName}`, {
@@ -25,6 +27,10 @@ function FileList({
         setFiles([]);
       });
   }, [bucketName, refreshTrigger]);
+
+  useEffect(() => {
+    setSearchTerm('');
+  }, [refreshTrigger]);
 
   const parseFileInfo = (filename) => {
     if (mode === 'translated') {
@@ -58,17 +64,11 @@ function FileList({
   };
 
   const handleDownload = (fileName) => {
-    const endpoint = mode === 'translated'
-      ? 'download_translated_script'
-      : 'download_untranslated_script';
-
+    const endpoint = mode === 'translated' ? 'download_translated_script' : 'download_untranslated_script';
     fetch(`http://localhost:9999/api/application/${endpoint}?file_name=${encodeURIComponent(fileName)}`, {
       credentials: 'include'
     })
-      .then(r => {
-        if (!r.ok) throw new Error(`Ошибка HTTP: ${r.status}`);
-        return r.blob();
-      })
+      .then(r => r.ok ? r.blob() : Promise.reject(r.status))
       .then(blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -76,7 +76,6 @@ function FileList({
         a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
-
         messageApi.success(`Файл "${fileName}" загружен.`);
         logToTerminal?.(`Файл "${fileName}" успешно загружен.`);
       })
@@ -87,12 +86,18 @@ function FileList({
   };
 
   const handleDelete = (fileName) => {
+    if (fileName === currentFileName) {
+      Modal.warning({
+        title: 'Нельзя удалить файл',
+        content: 'Файл в данный момент открыт в редакторе. Закройте его перед удалением.',
+        okText: 'Понятно'
+      });
+      return;
+    }
+
     if (!window.confirm(`Удалить "${fileName}"?`)) return;
 
-    const endpoint = mode === 'translated'
-      ? 'delete_translated_script'
-      : 'delete_untranslated_script';
-
+    const endpoint = mode === 'translated' ? 'delete_translated_script' : 'delete_untranslated_script';
     fetch(`http://localhost:9999/api/application/${endpoint}?file_name=${encodeURIComponent(fileName)}`, {
       method: 'DELETE',
       credentials: 'include'
@@ -104,28 +109,35 @@ function FileList({
         onDeleteSuccess?.();
       })
       .catch(e => {
-        messageApi.error(`Ошибка при удалении "${fileName}".`);
+        messageApi.error(`Ошибка при удалении файла "${fileName}".`);
         logToTerminal?.(`Ошибка удаления: ${e}`);
       });
   };
 
-  const sortedFiles = [...files].sort((a, b) => {
+  const filteredFiles = files.filter(f =>
+    parseFileInfo(f).title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
     const infoA = parseFileInfo(a);
     const infoB = parseFileInfo(b);
     const { key, direction } = sortConfig;
     if (!key) return 0;
-
     const valA = (infoA[key] || '').toLowerCase();
     const valB = (infoB[key] || '').toLowerCase();
-
-    if (valA < valB) return direction === 'asc' ? -1 : 1;
-    if (valA > valB) return direction === 'asc' ? 1 : -1;
-    return 0;
+    return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
   });
 
   return (
     <>
       {contextHolder}
+      <Input
+        autoFocus
+        placeholder="Поиск по названию файла..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        style={{ marginBottom: 10 }}
+      />
       <div style={{ overflowX: 'auto' }}>
         <table style={{
           width: '100%',
@@ -150,6 +162,7 @@ function FileList({
           <tbody>
             {sortedFiles.map((f, i) => {
               const { title, user, date } = parseFileInfo(f);
+              const isCurrent = f === currentFileName;
               return (
                 <tr key={i}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9f9f9'}
@@ -199,18 +212,41 @@ function FileList({
                     >
                       <FaDownload />
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
-                      title="Удалить"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#ff4d4f',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <FaTrash />
-                    </button>
+                    {isCurrent ? (
+                      <span
+                        title="Файл открыт в редакторе"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 24,
+                          height: 24,
+                          color: '#ccc',
+                          cursor: 'not-allowed'
+                        }}
+                      >
+                        <FaTrash />
+                      </span>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
+                        title="Удалить"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ff4d4f',
+                          cursor: 'pointer',
+                          width: 24,
+                          height: 24,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <FaTrash />
+                      </button>
+                    )}
+
                   </td>
                 </tr>
               );

@@ -1,4 +1,3 @@
-// src/UntranslatedCodeViewer.jsx
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { Drawer, message } from 'antd';
@@ -25,14 +24,9 @@ export default function UntranslatedCodeViewer({
 
   const ensureTxtExtension = (name) => name.endsWith('.txt') ? name : `${name}.txt`;
 
-  const cleanFileName = (name) =>
-    name
-      .replace(/^Имя\s?\d*\s?файл[а-я]*\s*-\s*/i, '')
-      .replace(/ - [^()]+ \([^)]+\)(?=\.txt$)/, '');
-
   useEffect(() => {
     if (!fileName) {
-      setCode('// Откройте файл из меню слева, чтобы начать работу.');
+      setCode('');
       setEditedFileName('Новый скрипт.txt');
       return;
     }
@@ -40,23 +34,23 @@ export default function UntranslatedCodeViewer({
     const finalName = ensureTxtExtension(fileName);
     const encoded = encodeURIComponent(finalName);
 
-    console.log('📥 Загружаем файл:', finalName);
+    logToTerminal?.(`Загружаем скрипт: ${finalName}`);
 
     fetch(`http://localhost:9999/api/application/get_untranslated_script_content?file_name=${encoded}`, {
       credentials: 'include'
     })
       .then(async res => {
         if (!res.ok) {
-          const text = await res.text();
-          console.error('Ошибка загрузки скрипта:', res.status, text);
-          throw new Error(`Ошибка загрузки скрипта: ${res.status}`);
+          logToTerminal?.(`Ошибка загрузки скрипта (код ${res.status}).`);
+          logToTerminal?.(`Откройте файл заново через боковое меню.`);
+          setCode(`// Откройте файл заново через боковое меню.`);
+          throw new Error(`${res.status}`);
         }
         return res.json();
       })
-      .then(data => setCode(data.content || '// ⚠️ Файл пуст или повреждён.'))
+      .then(data => setCode(data.content || '// Ошибка: нет содержимого'))
       .catch(err => {
-        console.error('❌ Ошибка при загрузке скрипта:', err.message);
-        setCode('// ⚠️ Не удалось загрузить скрипт.\n// Откройте нужный файл в архиве слева.');
+        console.error('Ошибка при загрузке скрипта:', err.message);
       });
 
     setEditedFileName(finalName);
@@ -85,7 +79,7 @@ export default function UntranslatedCodeViewer({
       .then(res => res.ok ? res.json() : Promise.reject(res.status))
       .then(() => {
         msgApi.success({ content: `"${safeFileName}" сохранён.`, duration: 3 });
-        logToTerminal?.(`Файл "${safeFileName}" сохранён. Откройте его в боковом меню для просмотра.`);
+        logToTerminal?.(`Файл "${safeFileName}" сохранён.`);
         onSaveSuccess?.();
         onSelectFile?.(safeFileName);
         setRefreshList(r => r + 1);
@@ -94,18 +88,6 @@ export default function UntranslatedCodeViewer({
         msgApi.error({ content: 'Ошибка при сохранении скрипта.', duration: 4 });
         logToTerminal?.(`Ошибка при сохранении: ${e}`);
       });
-  };
-
-  const fileHeaderStyle = {
-    flex: 1,
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    textOverflow: 'ellipsis',
-    cursor: 'text',
-    fontWeight: 'bold',
-    fontFamily: '"Proxima Nova", sans-serif',
-    fontSize: 14,
-    color: '#000'
   };
 
   return (
@@ -130,7 +112,9 @@ export default function UntranslatedCodeViewer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid #ddd'
+          borderBottom: '1px solid #ddd',
+          fontFamily: 'monospace',
+          fontSize: 14
         }}>
           {isEditingName ? (
             <input
@@ -140,19 +124,28 @@ export default function UntranslatedCodeViewer({
               onBlur={() => setIsEditingName(false)}
               onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
               style={{
-                ...fileHeaderStyle,
+                flex: 1,
+                fontSize: 14,
                 background: 'transparent',
                 border: 'none',
-                borderBottom: '1px solid #222'
+                borderBottom: '1px solid #222',
+                fontFamily: 'monospace'
               }}
             />
           ) : (
             <span
               title={editedFileName}
               onClick={() => setIsEditingName(true)}
-              style={fileHeaderStyle}
+              style={{
+                flex: 1,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                cursor: 'text',
+                fontWeight: 'bold'
+              }}
             >
-              {cleanFileName(editedFileName)}
+              {editedFileName}
             </span>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
@@ -175,12 +168,7 @@ export default function UntranslatedCodeViewer({
             theme="vs"
             value={code}
             onChange={v => setCode(v || '')}
-            options={{
-              fontSize: 14,
-              fontFamily: '"Proxima Nova", sans-serif',
-              fontWeight: 'normal',
-              fontLigatures: false
-            }}
+            options={{ fontSize: 14 }}
           />
         </div>
 
@@ -229,6 +217,7 @@ export default function UntranslatedCodeViewer({
             }}
             onDeleteSuccess={() => setRefreshList(r => r + 1)}
             logToTerminal={logToTerminal}
+            currentFileName={editedFileName}
           />
         </Drawer>
       </div>
