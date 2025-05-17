@@ -1,0 +1,53 @@
+/* Фиксированная ширина кнопок и плавность */
+.custom-pagination .ant-pagination-item {
+  min-width: 36px;
+  height: 36px;
+  line-height: 36px;
+  font-size: 16px;
+  text-align: center;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+
+/* Активация */
+.custom-pagination .ant-pagination-item-active {
+  background-color: #e6f7ff;
+  border-color: #1890ff;
+  font-weight: 600;
+}
+
+/* Hover на цифры */
+.custom-pagination .ant-pagination-item:hover {
+  background-color: rgba(24, 144, 255, 0.1);
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* Кнопки вперёд/назад */
+.custom-pagination .ant-pagination-prev,
+.custom-pagination .ant-pagination-next {
+  font-size: 18px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+/* Hover на стрелки */
+.custom-pagination .ant-pagination-prev:hover,
+.custom-pagination .ant-pagination-next:hover {
+  background-color: rgba(24, 144, 255, 0.05);
+  transform: scale(1.1);
+}
+
+/* Точки между страницами */
+.custom-pagination .ant-pagination-jump-next,
+.custom-pagination .ant-pagination-jump-prev {
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.custom-pagination .ant-pagination-jump-next:hover,
+.custom-pagination .ant-pagination-jump-prev:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}

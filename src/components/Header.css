@@ -4,7 +4,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 15px;
-  height: 70px;
+  height: 66px;
 }
 
 .header-title {
@@ -109,26 +109,46 @@
 }
 
 .styled-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  border: 1px solid #d0dbe7;
   background-color: white;
   color: #035bae;
-  border: none;
-  padding: 7px 14px;
-  border-radius: 3px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
   transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
+
 
 .styled-button:hover {
   background-color: #ebeef0;
-  border: #c4d0db;
+  border: 1px solid #c4d0db;
 }
 
 .icon-button {
   padding: 7px 10px;
+}
+
+.main-action {
+  background-color: #6daae3;
+  color: white;
+  border: 1px solid #488ccf;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  width: 60px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.main-action:hover {
+  background-color: #609fdb;
+  transform: scale(1.03);
+  border: 1px solid #488ccf; 
 }

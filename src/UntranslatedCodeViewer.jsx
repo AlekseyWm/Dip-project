@@ -218,6 +218,7 @@ export default function UntranslatedCodeViewer({
             onDeleteSuccess={() => setRefreshList(r => r + 1)}
             logToTerminal={logToTerminal}
             currentFileName={editedFileName}
+            drawerVisible={drawerVisible}
           />
         </Drawer>
       </div>

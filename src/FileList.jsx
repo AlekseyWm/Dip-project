@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FaDownload, FaTrash } from 'react-icons/fa';
-import { message, Input, Modal } from 'antd';
+import { message, Input, Modal, Pagination } from 'antd';
+
+const ITEMS_PER_PAGE = 10;
 
 function FileList({
   bucketName,
@@ -9,12 +11,14 @@ function FileList({
   onDeleteSuccess,
   logToTerminal,
   mode = 'translated',
-  currentFileName = ''
+  currentFileName = '',
+  drawerVisible = false
 }) {
   const [files, setFiles] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [messageApi, contextHolder] = message.useMessage();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetch(`http://localhost:9999/api/application/list_files?bucket_name=${bucketName}`, {
@@ -30,29 +34,18 @@ function FileList({
 
   useEffect(() => {
     setSearchTerm('');
-  }, [refreshTrigger]);
+    setCurrentPage(1);
+  }, [refreshTrigger, drawerVisible]);
 
   const parseFileInfo = (filename) => {
-    if (mode === 'translated') {
-      const match = filename.match(/^(.*?) - ([^(]+) \(([^)]+)\)\.py$/);
-      if (match) {
-        return {
-          title: match[1].trim(),
-          user: match[2].trim(),
-          date: match[3].trim()
-        };
-      }
-    }
-
-    const matchTxt = filename.match(/^(.*?) - ([^(]+) \(([^)]+)\)\.(txt|py)$/);
-    if (matchTxt) {
+    const match = filename.match(/^(.*?) - ([^(]+) \(([^)]+)\)\.(py|txt)$/);
+    if (match) {
       return {
-        title: matchTxt[1].trim(),
-        user: matchTxt[2].trim(),
-        date: matchTxt[3].trim()
+        title: match[1].trim(),
+        user: match[2].trim(),
+        date: match[3].trim()
       };
     }
-
     return { title: filename, user: '', date: '' };
   };
 
@@ -128,6 +121,9 @@ function FileList({
     return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
   });
 
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedFiles = sortedFiles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   return (
     <>
       {contextHolder}
@@ -135,124 +131,105 @@ function FileList({
         autoFocus
         placeholder="Поиск по названию файла..."
         value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
+        onChange={e => {
+          setSearchTerm(e.target.value);
+          setCurrentPage(1);
+        }}
         style={{ marginBottom: 10 }}
       />
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontFamily: 'monospace',
-          fontSize: 14
-        }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f0f0f0', textAlign: 'left', cursor: 'pointer' }}>
-              <th onClick={() => handleSort('title')} style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
-                Название {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
-              </th>
-              <th onClick={() => handleSort('date')} style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
-                Дата {sortConfig.key === 'date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
-              </th>
-              <th onClick={() => handleSort('user')} style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
-                Пользователь {sortConfig.key === 'user' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
-              </th>
-              <th style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedFiles.map((f, i) => {
-              const { title, user, date } = parseFileInfo(f);
-              const isCurrent = f === currentFileName;
-              return (
-                <tr key={i}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9f9f9'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <td
-                    title={title}
-                    onClick={() => onSelectFile?.(f)}
-                    style={{
+
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '520px' }}>
+        <div style={{ flexGrow: 1, overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontFamily: 'monospace',
+            fontSize: 14,
+            tableLayout: 'fixed'
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f0f0f0', textAlign: 'left', cursor: 'pointer' }}>
+                <th onClick={() => handleSort('title')} style={{ width: '40%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                  Название {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                </th>
+                <th onClick={() => handleSort('date')} style={{ width: '20%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                  Дата {sortConfig.key === 'date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                </th>
+                <th onClick={() => handleSort('user')} style={{ width: '25%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                  Пользователь {sortConfig.key === 'user' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                </th>
+                <th style={{ width: '15%', padding: '8px', borderBottom: '1px solid #ccc' }}>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedFiles.map((f, i) => {
+                const { title, user, date } = parseFileInfo(f);
+                const isCurrent = f === currentFileName;
+                return (
+                  <tr key={i}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td title={title} onClick={() => onSelectFile?.(f)} style={{
+                      width: '40%',
                       padding: '6px 8px',
                       borderBottom: '1px solid #eee',
                       color: '#00A97F',
-                      maxWidth: 150,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       cursor: 'pointer'
-                    }}
-                  >
-                    {title}
-                  </td>
-                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee' }}>{date}</td>
-                  <td title={user} style={{
-                    padding: '6px 8px',
-                    borderBottom: '1px solid #eee',
-                    maxWidth: 150,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {user}
-                  </td>
-                  <td style={{
-                    padding: '6px 8px',
-                    borderBottom: '1px solid #eee',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDownload(f); }}
-                      title="Скачать"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#1890ff',
-                        cursor: 'pointer',
-                        marginRight: 10
-                      }}
-                    >
-                      <FaDownload />
-                    </button>
-                    {isCurrent ? (
-                      <span
-                        title="Файл открыт в редакторе"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 24,
-                          height: 24,
-                          color: '#ccc',
-                          cursor: 'not-allowed'
-                        }}
-                      >
-                        <FaTrash />
-                      </span>
-                    ) : (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(f); }}
-                        title="Удалить"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#ff4d4f',
-                          cursor: 'pointer',
-                          width: 24,
-                          height: 24,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <FaTrash />
+                    }}>
+                      {title}
+                    </td>
+                    <td style={{ width: '20%', padding: '6px 8px', borderBottom: '1px solid #eee' }}>{date}</td>
+                    <td title={user} style={{
+                      width: '25%',
+                      padding: '6px 8px',
+                      borderBottom: '1px solid #eee',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>{user}</td>
+                    <td style={{ width: '15%', padding: '6px 8px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                      <button onClick={(e) => { e.stopPropagation(); handleDownload(f); }} title="Скачать" style={{
+                        background: 'none', border: 'none', color: '#1890ff', cursor: 'pointer', marginRight: 10
+                      }}>
+                        <FaDownload />
                       </button>
-                    )}
+                      {isCurrent ? (
+                        <span title="Файл открыт" style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: 24, height: 24, color: '#ccc', cursor: 'not-allowed'
+                        }}>
+                          <FaTrash />
+                        </span>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(f); }} title="Удалить" style={{
+                          background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer',
+                          width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <FaTrash />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={ITEMS_PER_PAGE}
+            total={sortedFiles.length}
+            onChange={page => setCurrentPage(page)}
+            size="small"
+            showSizeChanger={false}
+            className="custom-pagination"
+          />
+        </div>
       </div>
     </>
   );

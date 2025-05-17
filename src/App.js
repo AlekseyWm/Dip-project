@@ -8,6 +8,8 @@ import TranslatedCodeViewer from './TranslatedCodeViewer';
 import TerminalWindow from './TerminalWindow';
 import ProgressModal from './ProgressModal';
 import './App.css';
+import { FaCog } from 'react-icons/fa';
+
 
 function App() {
   const terminalRef = useRef(null);
@@ -137,7 +139,17 @@ function App() {
     };
   };
 
-  if (!authChecked) return <div>Проверка авторизации...</div>;
+  if (!authChecked) {
+    return (
+      <div className="auth-loading-container">
+        <div className="auth-gears">
+          <FaCog className="auth-gear-left" />
+          <FaCog className="auth-gear-right" />
+        </div>
+        <div className="auth-text">Проверка авторизации, пожалуйста подождите…</div>
+      </div>
+    );
+  }
 
   if (!userEmail) {
     return (

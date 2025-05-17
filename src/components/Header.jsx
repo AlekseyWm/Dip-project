@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaAddressCard, FaMoon, FaQuestionCircle, FaSignOutAlt, FaTerminal } from "react-icons/fa";
+import { FaMoon, FaQuestionCircle, FaSignOutAlt, FaTerminal } from "react-icons/fa";
 import '../components/Header.css';
+import { HiPlay } from 'react-icons/hi2';          // Интерпретация
+import { LuLayoutDashboard, LuUser } from 'react-icons/lu'; // Раскладка
+
 
 function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTerminal }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,8 +27,21 @@ function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTermin
         </div>
 
         <div className="header-right">
-          <button className="styled-button" onClick={onTranslate}>Интерпретировать</button>
-          <button className="styled-button">Раскладка</button>
+          <button 
+            className="styled-button main-action" 
+            onClick={onTranslate}
+            title="Интерпретировать"  
+          >
+            <HiPlay size={18} />
+          </button>
+
+          <button 
+            className="styled-button"
+            title="Раскладка" 
+          >
+            <LuLayoutDashboard size={18} />            
+          </button>
+
 
           <button
             className="styled-button icon-button"
@@ -37,7 +53,7 @@ function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTermin
 
           <div className="user-menu-wrapper" ref={menuRef}>
             <button className="styled-button icon-button" onClick={() => setMenuOpen(!menuOpen)}>
-              <FaAddressCard size={18} />
+              <LuUser size={18} />
             </button>
             {menuOpen && (
               <div className="user-dropdown">

@@ -111,3 +111,47 @@ html, body, #root {
     padding: 5px;
   }
 }
+
+
+
+.auth-loading-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  color: #035bae;
+}
+
+.auth-gears {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.auth-gear-left {
+  animation: spin 1.5s linear infinite;
+  font-size: 80px;
+}
+
+.auth-gear-right {
+  animation: spin-reverse 1.5s linear infinite;
+  font-size: 80px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+.auth-text {
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+}
