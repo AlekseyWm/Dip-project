@@ -44,7 +44,6 @@ const TerminalWindow = forwardRef(({ initialLog = [] }, ref) => {
       setTimeout(() => fitAddon.fit(), 100); // начальное подгонка размера
     }
 
-    // ⚡ слушаем resize
     const handleResize = () => {
       fitAddonRef.current?.fit();
     };

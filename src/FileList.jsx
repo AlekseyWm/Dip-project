@@ -1,6 +1,15 @@
+// FileList.jsx
 import React, { useEffect, useState } from 'react';
-import { FaDownload, FaTrash } from 'react-icons/fa';
-import { message, Input, Modal, Pagination } from 'antd';
+import { FaDownload, FaTrash, FaCalendarAlt } from 'react-icons/fa';
+import { message, Input, Modal, Pagination, DatePicker, Dropdown } from 'antd';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import 'dayjs/locale/ru';
+import locale from 'antd/es/date-picker/locale/ru_RU';
+
+dayjs.extend(isBetween);
+dayjs.extend(customParseFormat);
 
 const ITEMS_PER_PAGE = 10;
 
@@ -19,6 +28,8 @@ function FileList({
   const [messageApi, contextHolder] = message.useMessage();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [dateFilterVisible, setDateFilterVisible] = useState(false);
 
   useEffect(() => {
     fetch(`http://localhost:9999/api/application/list_files?bucket_name=${bucketName}`, {
@@ -107,9 +118,21 @@ function FileList({
       });
   };
 
-  const filteredFiles = files.filter(f =>
-    parseFileInfo(f).title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const isValidDate = (d) => dayjs(d, 'YYYY-MM-DD', true).isValid();
+
+  const filteredFiles = files.filter(f => {
+    const { title, date } = parseFileInfo(f);
+    const matchesTitle = title.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (dateRange[0] && dateRange[1]) {
+      const fileDate = dayjs(date);
+      const start = dayjs(dateRange[0]);
+      const end = dayjs(dateRange[1]);
+      return matchesTitle && fileDate.isBetween(start, end, 'day', '[]');
+    }
+
+    return matchesTitle;
+  });
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
     const infoA = parseFileInfo(a);
@@ -123,6 +146,22 @@ function FileList({
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedFiles = sortedFiles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const calendarDropdown = (
+    <div style={{ padding: 4, width: 230 }}>
+      <DatePicker.RangePicker
+        allowClear
+        format="YYYY-MM-DD"
+        value={dateRange}
+        onChange={(dates) => {
+          if (!dates || (dates[0] && !isValidDate(dates[0])) || (dates[1] && !isValidDate(dates[1]))) return;
+          setDateRange(dates);
+        }}
+        style={{ width: '100%' }}
+        size="small"
+      />
+    </div>
+  );
 
   return (
     <>
@@ -148,14 +187,26 @@ function FileList({
             tableLayout: 'fixed'
           }}>
             <thead>
-              <tr style={{ backgroundColor: '#f0f0f0', textAlign: 'left', cursor: 'pointer' }}>
-                <th onClick={() => handleSort('title')} style={{ width: '40%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+              <tr style={{ backgroundColor: '#f0f0f0', textAlign: 'left' }}>
+                <th onClick={() => handleSort('title')} style={{ width: '40%', padding: '8px', borderBottom: '1px solid #ccc', cursor: 'pointer' }}>
                   Название {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                 </th>
-                <th onClick={() => handleSort('date')} style={{ width: '20%', padding: '8px', borderBottom: '1px solid #ccc' }}>
-                  Дата {sortConfig.key === 'date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                <th style={{ width: '20%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ cursor: 'pointer' }} onClick={() => handleSort('date')}>
+                      Дата {sortConfig.key === 'date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                    </span>
+                    <Dropdown
+                      open={dateFilterVisible}
+                      onOpenChange={setDateFilterVisible}
+                      dropdownRender={() => calendarDropdown}
+                      trigger={['click']}
+                    >
+                      <FaCalendarAlt size={15} style={{ cursor: 'pointer', marginLeft: 6 }} />
+                    </Dropdown>
+                  </div>
                 </th>
-                <th onClick={() => handleSort('user')} style={{ width: '25%', padding: '8px', borderBottom: '1px solid #ccc' }}>
+                <th onClick={() => handleSort('user')} style={{ width: '25%', padding: '8px', borderBottom: '1px solid #ccc', cursor: 'pointer' }}>
                   Пользователь {sortConfig.key === 'user' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
                 </th>
                 <th style={{ width: '15%', padding: '8px', borderBottom: '1px solid #ccc' }}>Действия</th>

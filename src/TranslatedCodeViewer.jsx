@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import * as monaco from 'monaco-editor';
 import { Editor } from '@monaco-editor/react';
 import { FaSave, FaExpandArrowsAlt, FaListUl } from 'react-icons/fa';
 import { Drawer, message } from 'antd';
@@ -19,6 +20,17 @@ export default function TranslatedCodeViewer({
   const [drawerVisible, setDrawer] = useState(false);
   const [refreshTrigger, setRefresh] = useState(0);
   const [msgApi, contextHolder] = message.useMessage();
+
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      editorRef.current?.layout();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const ensurePyExtension = (name) => name.endsWith('.py') ? name : `${name}.py`;
 
@@ -51,6 +63,11 @@ export default function TranslatedCodeViewer({
       .catch(() => setCode('// Ошибка при загрузке скрипта'));
   }, [fileName, overrideCode, overrideFileName]);
 
+  const parseErrorLine = (message) => {
+    const match = message.match(/line (\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
   const handleSave = () => {
     if (!code.trim()) return logToTerminal('Пустой скрипт нельзя сохранить.');
     if (!editedFileName.trim()) return logToTerminal('Нет имени файла.');
@@ -63,15 +80,21 @@ export default function TranslatedCodeViewer({
       credentials: 'include',
       body: JSON.stringify({ file_name: editedFileName, code })
     })
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(r => r.ok ? r.json() : r.text().then(text => Promise.reject(text)))
       .then(() => {
-        msgApi.open({ type: 'success', content: `"${editedFileName}" сохранён.`, duration: 4 });
+        msgApi.destroy();
+        msgApi.success({ content: `"${editedFileName}" сохранён.`, duration: 2 });
         logToTerminal?.(`Файл "${editedFileName}" сохранён. Откройте его в архиве справа.`);
         onSaveSuccess();
       })
       .catch(e => {
         logToTerminal(`Ошибка сохранения: ${e}`);
         msgApi.open({ type: 'error', content: 'Ошибка при сохранении', duration: 4 });
+
+        const line = parseErrorLine(e);
+        if (line) {
+          logToTerminal(`Ошибка в строке ${line}`);
+        }
       });
   };
 
@@ -90,6 +113,7 @@ export default function TranslatedCodeViewer({
   return (
     <>
       {contextHolder}
+
       <div style={{
         position: isFullscreen ? 'fixed' : 'relative',
         top: isFullscreen ? 0 : 'auto',
@@ -139,7 +163,18 @@ export default function TranslatedCodeViewer({
             <button onClick={handleSave} style={{ border: 'none', background: 'none' }}>
               <FaSave />
             </button>
-            <button onClick={() => setFullscreen(f => !f)} style={{ border: 'none', background: 'none' }}>
+            <button
+              onClick={() =>
+                setFullscreen(f => {
+                  const next = !f;
+                  requestAnimationFrame(() => {
+                    editorRef.current?.layout();
+                  });
+                  return next;
+                })
+              }
+              style={{ border: 'none', background: 'none' }}
+            >
               <FaExpandArrowsAlt />
             </button>
           </div>
@@ -153,11 +188,15 @@ export default function TranslatedCodeViewer({
             theme="vs"
             value={code}
             onChange={v => setCode(v || '')}
+            onMount={(editor) => {
+              editorRef.current = editor;
+            }}
             options={{
               fontSize: 14,
               fontFamily: '"Proxima Nova", sans-serif',
               fontWeight: 'normal',
-              fontLigatures: false
+              fontLigatures: false,
+              glyphMargin: true
             }}
           />
         </div>

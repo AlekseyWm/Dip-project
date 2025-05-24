@@ -64,54 +64,6 @@ html, body, #root {
   background-color: #e6f4eb;
 }
 
-/* Стили для скроллбаров */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.5);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 100, 100, 0.7);
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(120, 120, 120, 0.5) transparent;
-}
-
-/* Шапка, логотип и прочее */
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* Мобильные правки */
-@media screen and (max-width: 1000px) {
-  .App {
-    padding: 5px;
-  }
-}
-
 
 
 .auth-loading-container {
@@ -154,4 +106,95 @@ html, body, #root {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
+}
+
+
+/* Стили для скроллбаров */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.7);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 120, 0.5) transparent;
+}
+
+/* Шапка, логотип и прочее */
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+@keyframes App-logo-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  /* Основной контейнер */
+  .App.mobile-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Блоки под редакторы и терминал */
+  .App.mobile-view .mobile-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .App.mobile-view .mobile-panel {
+    flex: 1;
+    min-height: 0;           /* чтобы overflow работал корректно */
+    overflow: auto;
+    border: none !important; /* убрать рамки Splitter */
+  }
+
+  /* Отдельная стилизация терминала, если нужна */
+  .App.mobile-view .terminal-panel {
+    border-top: 1px solid #ccc;
+  }
+
+  /* Скрываем desktop-сплит */
+  .split {
+    display: none;
+  }
+
+  .ant-message {
+    top: 10px !important;
+    left: 10px;
+    right: 10px;
+    max-width: calc(100vw - 20px);
+  }
+
+  .ant-message-notice {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .ant-message-custom-content {
+    word-break: break-word;
+  }
 }

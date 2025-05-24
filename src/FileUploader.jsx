@@ -45,7 +45,7 @@ function FileUploader({ logToTerminal, onUploadSuccess, userEmail }) {
       })
       .then((data) => {
         logToTerminal && logToTerminal(data.message || 'Файл успешно загружен!');
-        onUploadSuccess && onUploadSuccess();
+        onUploadSuccess && onUploadSuccess(file.name);
         setFileList([]);
       })
       .catch((error) => {

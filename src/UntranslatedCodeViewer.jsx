@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { Drawer, message } from 'antd';
 import { FaSave, FaExpandArrowsAlt, FaListUl, FaChevronRight } from 'react-icons/fa';
@@ -13,6 +13,15 @@ export default function UntranslatedCodeViewer({
   onSelectFile,
   userEmail
 }) {
+  const editorRef = useRef(null);
+  useEffect(() => {
+    const handleResize = () => {
+      editorRef.current?.layout();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [code, setCode] = useState('');
   const [editedFileName, setEditedFileName] = useState(fileName || 'Новый скрипт.txt');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -78,8 +87,8 @@ export default function UntranslatedCodeViewer({
     })
       .then(res => res.ok ? res.json() : Promise.reject(res.status))
       .then(() => {
-        msgApi.success({ content: `"${safeFileName}" сохранён.`, duration: 3 });
-        logToTerminal?.(`Файл "${safeFileName}" сохранён.`);
+        msgApi.destroy();
+        msgApi.success({ content: `"${editedFileName}" сохранён.`, duration: 2 });        logToTerminal?.(`Файл "${safeFileName}" сохранён.`);
         onSaveSuccess?.();
         onSelectFile?.(safeFileName);
         setRefreshList(r => r + 1);
@@ -155,7 +164,19 @@ export default function UntranslatedCodeViewer({
             <button onClick={handleSave} title="Сохранить" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
               <FaSave />
             </button>
-            <button onClick={() => setIsFullscreen(f => !f)} title={isFullscreen ? 'В окно' : 'Во весь экран'} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button
+              onClick={() =>
+                setIsFullscreen(f => {
+                  const newVal = !f;
+                  requestAnimationFrame(() => {
+                    editorRef.current?.layout();
+                  });
+                  return newVal;
+                })
+              }
+              title={isFullscreen ? 'В окно' : 'Во весь экран'}
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
               <FaExpandArrowsAlt />
             </button>
           </div>
@@ -168,6 +189,9 @@ export default function UntranslatedCodeViewer({
             theme="vs"
             value={code}
             onChange={v => setCode(v || '')}
+            onMount={(editor) => {
+              editorRef.current = editor;
+            }}
             options={{ fontSize: 14 }}
           />
         </div>

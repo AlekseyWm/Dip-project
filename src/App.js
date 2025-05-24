@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useRef, useState, useEffect } from 'react';
-import { Modal, Splitter } from 'antd';
+import { Modal } from 'antd';
 import Header from './components/Header';
 import Login from './Login';
 import UntranslatedCodeViewer from './UntranslatedCodeViewer';
@@ -9,7 +9,7 @@ import TerminalWindow from './TerminalWindow';
 import ProgressModal from './ProgressModal';
 import './App.css';
 import { FaCog } from 'react-icons/fa';
-
+import { Splitter } from 'antd';
 
 function App() {
   const terminalRef = useRef(null);
@@ -36,6 +36,14 @@ function App() {
   const [progCurrent, setProgCurrent] = useState(0);
   const [progPhase, setProgPhase] = useState('translate');
 
+  // ✅ перемещено сюда — чтобы не вызываться условно
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const logToTerminal = (msg) => {
     setTerminalLog(prev => [...prev, msg]);
     terminalRef.current?.writeln(msg);
@@ -52,6 +60,8 @@ function App() {
       .catch(() => logToTerminal('Сессия не активна. Требуется вход.'))
       .finally(() => setAuthChecked(true));
   }, []);
+
+  
 
   const handleLogout = () => {
     fetch('http://localhost:9999/api/auth/jwt/logout', {
@@ -142,27 +152,103 @@ function App() {
   if (!authChecked) {
     return (
       <div className="auth-loading-container">
-        <div className="auth-gears">
-          <FaCog className="auth-gear-left" />
-          <FaCog className="auth-gear-right" />
-        </div>
+        <FaCog className="auth-gear-left" />
+        <FaCog className="auth-gear-right" />
         <div className="auth-text">Проверка авторизации, пожалуйста подождите…</div>
       </div>
     );
   }
 
   if (!userEmail) {
+    return <Login onLogin={({ email, fullName }) => {
+      setUserEmail(email);
+      setUserFullName(fullName);
+      terminalRef.current?.clear();
+      setTerminalLog([]);
+      logToTerminal(`Успешный вход: ${email}`);
+    }} />;
+  }
+
+  // === Мобильная версия ===
+  if (isMobile) {
     return (
-      <Login onLogin={({ email, fullName }) => {
-        setUserEmail(email);
-        setUserFullName(fullName);
-        terminalRef.current?.clear();
-        setTerminalLog([]);
-        logToTerminal(`Успешный вход: ${email}`);
-      }} />
+      <div className="App mobile-view">
+        <Header
+          userEmail={userEmail}
+          userFullName={userFullName}
+          onLogout={handleLogout}
+          onTranslate={handleTranslate}
+          onToggleTerminal={() => setShowTerminal(v => !v)}
+        />
+        <div className="mobile-container">
+          <div className="mobile-panel">
+            <UntranslatedCodeViewer
+              fileName={selectedFileLeft}
+              logToTerminal={logToTerminal}
+              onSaveSuccess={() => setRefreshLeft(n => n + 1)}
+              onSelectFile={fname => {
+                setFileLeft(fname);
+                setOvrCode('');
+                setOvrName('');
+                logToTerminal(`Выбран файл слева: ${fname}`);
+              }}
+              userEmail={userEmail}
+            />
+          </div>
+
+          <div className="mobile-panel">
+            <TranslatedCodeViewer
+              fileName={selectedFileRight}
+              overrideCode={overrideCode}
+              overrideFileName={overrideFileName}
+              logToTerminal={logToTerminal}
+              onSaveSuccess={() => setRefreshRight(n => n + 1)}
+              onSelectFile={fname => {
+                setFileRight(fname);
+                logToTerminal(`Выбран файл справа: ${fname}`);
+              }}
+            />
+          </div>
+
+          {showTerminal && (
+            <div className="mobile-panel terminal-panel">
+              <TerminalWindow ref={terminalRef} initialLog={terminalLog} />
+            </div>
+          )}
+        </div>
+
+        <Modal
+          title="Подтверждение"
+          open={showConfirm}
+          onOk={startInterpretation}
+          onCancel={() => setShowConfirm(false)}
+          okText="Продолжить"
+          cancelText="Отмена"
+        >
+          <p>Процесс интерпретации нельзя будет остановить. Продолжить?</p>
+        </Modal>
+
+        <ProgressModal
+          open={showProgress}
+          total={progTotal}
+          current={progCurrent}
+          phase={progPhase}
+          fileName={overrideFileName}
+          onClose={() => {
+            if (esRef.current) {
+              esRef.current.close();
+              esRef.current = null;
+              totalRef.current = 0;
+              logToTerminal('Интерпретация остановлена.');
+            }
+            setShowProgress(false);
+          }}
+        />
+      </div>
     );
   }
 
+  // === Десктопная версия ===
   return (
     <div className="App">
       <Header
@@ -172,7 +258,6 @@ function App() {
         onTranslate={handleTranslate}
         onToggleTerminal={() => setShowTerminal(v => !v)}
       />
-
       <div className="split">
         <Splitter
           layout="vertical"
@@ -183,7 +268,7 @@ function App() {
         >
           <Splitter.Panel min={200}>
             <Splitter style={{ height: '100%' }}>
-              <Splitter.Panel min="20%" collapsible>
+              <Splitter.Panel min={300} collapsible>
                 <UntranslatedCodeViewer
                   fileName={selectedFileLeft}
                   logToTerminal={logToTerminal}
@@ -197,7 +282,7 @@ function App() {
                   userEmail={userEmail}
                 />
               </Splitter.Panel>
-              <Splitter.Panel min="20%" collapsible>
+              <Splitter.Panel min={300} collapsible>
                 <TranslatedCodeViewer
                   fileName={selectedFileRight}
                   overrideCode={overrideCode}

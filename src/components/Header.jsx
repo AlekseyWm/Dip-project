@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaMoon, FaQuestionCircle, FaSignOutAlt, FaTerminal } from "react-icons/fa";
+import { FaPlay, FaMoon, FaQuestionCircle, FaSignOutAlt, FaTerminal } from "react-icons/fa";
 import '../components/Header.css';
-import { HiPlay } from 'react-icons/hi2';          // Интерпретация
-import { LuLayoutDashboard, LuUser } from 'react-icons/lu'; // Раскладка
+import { LuUser } from 'react-icons/lu';
 
 
 function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTerminal }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -15,8 +15,13 @@ function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTermin
         setMenuOpen(false);
       }
     };
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   return (
@@ -27,20 +32,20 @@ function Header({ userEmail, userFullName, onLogout, onTranslate, onToggleTermin
         </div>
 
         <div className="header-right">
-          <button 
-            className="styled-button main-action" 
+          <button
+            className={`styled-button ${isMobile ? 'icon-button' : 'main-action'}`}
             onClick={onTranslate}
-            title="Интерпретировать"  
+            title="Интерпретировать"
           >
-            <HiPlay size={18} />
+            {isMobile ? <FaPlay size={16} /> : 'Интерпретировать'}
           </button>
 
-          <button 
+          {/* <button 
             className="styled-button"
             title="Раскладка" 
           >
             <LuLayoutDashboard size={18} />            
-          </button>
+          </button> */}
 
 
           <button
