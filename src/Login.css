@@ -88,3 +88,53 @@
     margin: 4px 0 -4px 0;
   }
   
+  .field-error {
+  color: #e74c3c;
+  font-size: 13px;
+  margin: 4px 0 4px 4px;
+  text-align: left;
+}
+
+/* Общая ошибка (например, ошибка входа) */
+.login-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 8px 12px;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+/* Кнопка переключения между формами */
+.login-switch {
+  background: none;
+  border: none;
+  color: #007bff;
+  margin-top: 15px;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.login-switch:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+/* Контейнер пароля с иконкой */
+.password-container {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 16px
+}
